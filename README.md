@@ -1,22 +1,17 @@
-# Athena
+# Athena v2
 
-Athena is a utility which generates the current Fortnite Item Shop into a stylized image and shares it on Twitter.
-
-As seen on [@FNMasterCom](https://twitter.com/FNMasterCom/status/1197666123078160386?s=20)...
-
-<p align="center">
-    <img src="https://i.imgur.com/YXoesjJ.png" width="650px" draggable="false">
-</p>
+Athena v2 is a utility which generates the current Fortnite Item Shop into a stylized image.
 
 ## Requirements
 
-- [Python 3.7](https://www.python.org/downloads/)
-- [Requests](http://docs.python-requests.org/en/master/user/install/)
-- [coloredlogs](https://pypi.org/project/coloredlogs/)
-- [Pillow](https://pillow.readthedocs.io/en/stable/installation.html#basic-installation)
-- [python-twitter](https://github.com/bear/python-twitter#installing)
+- [Python](https://www.python.org/downloads/)
+    - [requests](http://docs.python-requests.org/en/master/user/install/)
+    - [coloredlogs](https://pypi.org/project/coloredlogs/)
+    - [Pillow==9.5.0](https://pillow.readthedocs.io/en/stable/installation.html#basic-installation)
 
-A [Fortnite-API API Key](https://fortnite-api.com/profile) is required to obtain the Item Shop data, [Twitter API credentials](https://developer.twitter.com/en/apps) are required to Tweet the image.
+```bash
+    python3 -m pip install requests coloredlogs Pillow==9.5.0
+```
 
 ## Usage
 
@@ -24,15 +19,13 @@ Open `configuration_example.json` in your preferred text editor, fill the config
 
 - `delayStart`: Set to `0` to begin the process immediately
 - `language`: Set the language for the Item Shop data ([Supported Languages](https://fortnite-api.com/documentation))
-- `supportACreator`: Leave blank to omit the Support-A-Creator tag section of the Tweet
-- `twitter`: Set `enabled` to `false` if you wish for `itemshop.png` to not be Tweeted
 
 Edit the images found in `assets/images/` to your liking, avoid changing image dimensions for optimal results.
 
-Athena is designed to be ran using a scheduler, such as [cron](https://en.wikipedia.org/wiki/Cron).
+Athena v2 is designed to be ran using a scheduler, such as [cron](https://en.wikipedia.org/wiki/Cron).
 
 ```
-python itemshop.py
+python3 itemshop.py
 ```
 
 ## Credits

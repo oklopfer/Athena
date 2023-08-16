@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 from math import ceil
 from sys import exit
 from time import sleep
@@ -13,13 +14,14 @@ from util import ImageUtil, Utility
 log = logging.getLogger(__name__)
 coloredlogs.install(level="INFO", fmt="[%(asctime)s] %(message)s", datefmt="%I:%M:%S")
 
+import warnings
+warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 class Athena:
     """Fortnite Item Shop Generator."""
 
     def main(self):
-        print("Athena - Fortnite Item Shop Generator")
-        print("https://github.com/EthanC/Athena\n")
+        print("Fortnite Item Shop Generator")
 
         initialized = Athena.LoadConfiguration(self)
 
@@ -31,7 +33,6 @@ class Athena:
             itemShop = Utility.GET(
                 self,
                 "https://fortnite-api.com/shop/br",
-                {"x-api-key": self.apiKey},
                 {"language": self.language},
             )
 
@@ -46,10 +47,6 @@ class Athena:
 
                 shopImage = Athena.GenerateImage(self, date, itemShop)
 
-                if shopImage is True:
-                    if self.twitterEnabled is True:
-                        Athena.Tweet(self, date)
-
     def LoadConfiguration(self):
         """
         Set the configuration values specified in configuration.json
@@ -61,14 +58,7 @@ class Athena:
 
         try:
             self.delay = configuration["delayStart"]
-            self.apiKey = configuration["fortniteAPI"]["apiKey"]
             self.language = configuration["language"]
-            self.supportACreator = configuration["supportACreator"]
-            self.twitterEnabled = configuration["twitter"]["enabled"]
-            self.twitterAPIKey = configuration["twitter"]["apiKey"]
-            self.twitterAPISecret = configuration["twitter"]["apiSecret"]
-            self.twitterAccessToken = configuration["twitter"]["accessToken"]
-            self.twitterAccessSecret = configuration["twitter"]["accessSecret"]
 
             log.info("Loaded configuration")
 
@@ -98,8 +88,16 @@ class Athena:
         # Determine the max amount of rows required for the current
         # Item Shop when there are 3 columns for both Featured and Daily.
         # This allows us to determine the image height.
-        rows = max(ceil(len(featured) / 3), ceil(len(daily) / 3))
-        shopImage = Image.new("RGB", (1920, ((545 * rows) + 340)))
+        all_items = featured + daily
+        rows = max(0, ceil(len(all_items) / 6))
+        columns = math.ceil(math.sqrt(len(all_items)))
+        max_items_per_row = columns + 2
+        num_items = len(all_items)
+        if num_items <= 6:
+            width = 320 * num_items
+        else:
+            width = 320 * max_items_per_row
+        shopImage = Image.new("RGBA", (width, (545 * (columns - 1) + 340) - 455))
 
         try:
             background = ImageUtil.Open(self, "background.png")
@@ -128,45 +126,20 @@ class Athena:
             (255, 255, 255),
             font=font,
         )
-        canvas.text((20, 255), "Featured", (255, 255, 255), font=font)
-        textWidth, _ = font.getsize("Daily")
-        canvas.text(
-            (shopImage.width - (textWidth + 20), 255),
-            "Daily",
-            (255, 255, 255),
-            font=font,
-        )
 
         # Track grid position
         i = 0
 
-        for item in featured:
+        for item in all_items:
             card = Athena.GenerateCard(self, item)
 
             if card is not None:
+
                 shopImage.paste(
                     card,
                     (
-                        (20 + ((i % 3) * (card.width + 5))),
-                        (315 + ((i // 3) * (card.height + 5))),
-                    ),
-                    card,
-                )
-
-                i += 1
-
-        # Reset grid position
-        i = 0
-
-        for item in daily:
-            card = Athena.GenerateCard(self, item)
-
-            if card is not None:
-                shopImage.paste(
-                    card,
-                    (
-                        (990 + ((i % 3) * (card.width + 5))),
-                        (315 + ((i // 3) * (card.height + 5))),
+                        ((max_items_per_row * 8) + ((i % max_items_per_row) * (card.width + 5))),
+                        355 + ((i // max_items_per_row) * (card.height + 5)),
                     ),
                     card,
                 )
@@ -244,10 +217,24 @@ class Athena:
             icon = ImageUtil.RatioResize(self, icon, 230, 310)
         else:
             icon = ImageUtil.RatioResize(self, icon, 310, 390)
-        if (category == "outfit") or (category == "emote"):
-            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width), icon)
+        if (category == "outfit"):
+            if icon.mode == "RGBA":
+                alpha = icon.split()[3]
+            else:
+                alpha = None
+            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width), mask=alpha)
+        elif (category == "emote"):
+            if icon.mode == "RGBA":
+                alpha = icon.split()[3]
+            else:
+                alpha = None
+            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
         else:
-            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+            if icon.mode == "RGBA":
+                alpha = icon.split()[3]
+            else:
+                alpha = None
+            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
 
         if len(item["items"]) > 1:
             # Track grid position
@@ -369,39 +356,6 @@ class Athena:
         )
 
         return card
-
-    def Tweet(self, date: str):
-        """
-        Tweet the current `itemshop.png` local file to Twitter using the credentials provided
-        in `configuration.json`.
-        """
-
-        try:
-            twitterAPI = twitter.Api(
-                consumer_key=self.twitterAPIKey,
-                consumer_secret=self.twitterAPISecret,
-                access_token_key=self.twitterAccessToken,
-                access_token_secret=self.twitterAccessSecret,
-            )
-
-            twitterAPI.VerifyCredentials()
-        except Exception as e:
-            log.critical(f"Failed to authenticate with Twitter, {e}")
-
-            return
-
-        body = f"#Fortnite Item Shop for {date}"
-
-        if self.supportACreator is not None:
-            body = f"{body}\n\nSupport-a-Creator Code: {self.supportACreator}"
-
-        try:
-            with open("itemshop.png", "rb") as shopImage:
-                twitterAPI.PostUpdate(body, media=shopImage)
-
-            log.info("Tweeted Item Shop")
-        except Exception as e:
-            log.critical(f"Failed to Tweet Item Shop, {e}")
 
 
 if __name__ == "__main__":
