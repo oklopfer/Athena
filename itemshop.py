@@ -6,7 +6,6 @@ from sys import exit
 from time import sleep
 
 import coloredlogs
-import twitter
 from PIL import Image, ImageDraw
 
 from util import ImageUtil, Utility
