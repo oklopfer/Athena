@@ -86,6 +86,7 @@ class Athena:
             return False
 
         all_items = featured + daily
+        all_items.sort(key=lambda x: x["section"]["index"])
         rows = max(0, ceil(len(all_items) / 6))
         columns = math.ceil(math.sqrt(len(all_items)))
         max_items_per_row = columns + 2
@@ -226,10 +227,11 @@ class Athena:
             card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width), mask=alpha)
         elif (category == "emote"):
             if icon.mode == "RGBA":
-                alpha = icon.split()[3]
+                r, g, b, alpha = icon.split()
+                combined_icon = Image.merge("RGBA", (r, g, b, alpha))
+                card.paste(combined_icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
             else:
-                alpha = None
-            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
         else:
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
