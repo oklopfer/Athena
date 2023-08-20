@@ -32,7 +32,7 @@ class Athena:
 
             itemShop = Utility.GET(
                 self,
-                "https://fortnite-api.com/shop/br",
+                "https://fortnite-api.com/v2/shop/br/combined",
                 {"language": self.language},
             )
 
@@ -74,8 +74,8 @@ class Athena:
         """
 
         try:
-            featured = itemShop["featured"]
-            daily = itemShop["daily"]
+            featured = itemShop["featured"]["entries"]
+            daily = itemShop["daily"]["entries"]
 
             # Ensure both Featured and Daily have at least 1 item
             if (len(featured) <= 0) or (len(daily) <= 0):
@@ -85,9 +85,6 @@ class Athena:
 
             return False
 
-        # Determine the max amount of rows required for the current
-        # Item Shop when there are 3 columns for both Featured and Daily.
-        # This allows us to determine the image height.
         all_items = featured + daily
         rows = max(0, ceil(len(all_items) / 6))
         columns = math.ceil(math.sqrt(len(all_items)))
@@ -158,16 +155,20 @@ class Athena:
         """Return the card image for the provided Fortnite Item Shop item."""
 
         try:
-            name = item["items"][0]["name"]
-            rarity = item["items"][0]["rarity"]
-            category = item["items"][0]["type"]
-            price = item["finalPrice"]
-            if isinstance(item["items"][0]["images"]["featured"], dict):
-                icon = item["items"][0]["images"]["featured"]["url"]
+            if "bundle" in item and item["bundle"] is not None:
+                name = item["bundle"]["name"]
+                icon = item["bundle"]["image"]
             else:
-                icon = item["items"][0]["images"]["icon"]["url"]
+                name = item["items"][0]["name"]
+                if isinstance(item["items"][0]["images"]["featured"], dict):
+                    icon = item["items"][0]["images"]["featured"]
+                else:
+                    icon = item["items"][0]["images"]["icon"]
+            rarity = item["items"][0]["rarity"]["value"]
+            category = item["items"][0]["type"]["value"]
+            price = item["finalPrice"]
         except Exception as e:
-            log.error(f"Failed to parse item {name}, {e}")
+            log.error(f"Failed to parse item {name} ({rarity}/{category}/{price}), {e}")
 
             return
 
@@ -243,8 +244,8 @@ class Athena:
             # Start at position 1 in items array
             for extra in item["items"][1:]:
                 try:
-                    extraRarity = extra["rarity"]
-                    extraIcon = extra["images"]["smallIcon"]["url"]
+                    extraRarity = extra["rarity"]["value"]
+                    extraIcon = extra["images"]["smallIcon"]
                 except Exception as e:
                     log.error(f"Failed to parse item {name}, {e}")
 
