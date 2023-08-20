@@ -4,6 +4,7 @@ import math
 from math import ceil
 from sys import exit
 from time import sleep
+from datetime import datetime
 
 import coloredlogs
 from PIL import Image, ImageDraw
@@ -45,6 +46,20 @@ class Athena:
                 log.info(f"Retrieved Item Shop for {date}")
 
                 shopImage = Athena.GenerateImage(self, date, itemShop)
+
+    def add_yellow_border(card, border_size=7):
+        """Add a yellow border around an image."""
+        draw = ImageDraw.Draw(card)
+        width, height = card.size
+        # Top border
+        draw.rectangle([0, 0, width, border_size], fill='yellow')
+        # Bottom border
+        draw.rectangle([0, height - border_size, width, height], fill='yellow')
+        # Left border
+        draw.rectangle([0, 0, border_size, height], fill='yellow')
+        # Right border
+        draw.rectangle([width - border_size, 0, width, height], fill='yellow')
+        return card
 
     def LoadConfiguration(self):
         """
@@ -158,12 +173,24 @@ class Athena:
             if "bundle" in item and item["bundle"] is not None:
                 name = item["bundle"]["name"]
                 icon = item["bundle"]["image"]
+                shop_time = f"Bundle"
             else:
                 name = item["items"][0]["name"]
                 if isinstance(item["items"][0]["images"]["featured"], dict):
                     icon = item["items"][0]["images"]["featured"]
                 else:
                     icon = item["items"][0]["images"]["icon"]
+                shopHistory = item["items"][0]["shopHistory"]
+                shopHistory_dates = [datetime.fromisoformat(date_string) for date_string in shopHistory]
+                days_difference = (shopHistory_dates[-1] - shopHistory_dates[-2]).days
+                if len(shopHistory_dates) < 2:
+                    shop_time = "New!"
+                else:
+                    days_difference = (shopHistory_dates[-1] - shopHistory_dates[-2]).days
+                    if days_difference == 1:
+                        shop_time = f"{days_difference} day"
+                    else:
+                        shop_time = f"{days_difference} days"
             rarity = item["items"][0]["rarity"]["value"]
             category = item["items"][0]["type"]["value"]
             price = item["finalPrice"]
@@ -332,15 +359,25 @@ class Athena:
         price = str(f"{price:,}")
         textWidth, _ = font.getsize(price)
         canvas.text(
-            ImageUtil.CenterX(self, ((textWidth - 5) - vbucks.width), card.width, 495),
+            ImageUtil.CenterX(self, ((textWidth - 5) - vbucks.width), (card.width - 175), 495),
             price,
             blendColor,
             font=font,
         )
 
+        textWidth, _ = font.getsize(shop_time)
+        canvas.text(
+            ImageUtil.CenterX(self, ((textWidth - 5)), (card.width + 140), 495),
+            shop_time,
+            blendColor,
+            font=font,
+        )
+        if shop_time == "New!":
+            card = self.add_yellow_border(card)
+
         card.paste(
             vbucks,
-            ImageUtil.CenterX(self, (vbucks.width + (textWidth + 5)), card.width, 495),
+            ImageUtil.CenterX(self, (vbucks.width + (textWidth + 5)), (card.width - 175), 495),
             vbucks,
         )
 
