@@ -200,7 +200,7 @@ class Athena:
             if "bundle" in item and item["bundle"] is not None:
                 name = item["bundle"]["name"]
                 icon = item["bundle"]["image"]
-                shop_time = f"Bundle"
+                shop_time = "Bundle"
             else:
                 name = item["items"][0]["name"]
                 if isinstance(item["items"][0]["images"]["featured"], dict):
