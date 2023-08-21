@@ -10,7 +10,7 @@ Athena v2 is a utility which generates the current Fortnite Item Shop into a sty
     - [Pillow==9.5.0](https://pillow.readthedocs.io/en/stable/installation.html#basic-installation)
 
 ```bash
-python3 -m pip install requests coloredlogs Pillow==9.5.0
+python3 -m pip install requests coloredlogs Pillow==9.5.0 discord.py
 ```
 
 ## Usage
