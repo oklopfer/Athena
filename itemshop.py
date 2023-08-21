@@ -35,12 +35,14 @@ async def on_ready():
         current_date = datetime.utcnow().strftime('%B %d, %Y')
         with open('itemshop.png', 'rb') as img:
             await channel.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
+            await bot.close()
 
 @bot.command()
 async def upload(ctx):
     current_date = datetime.utcnow().strftime('%B %d, %Y')
     with open('itemshop.png', 'rb') as img:
         await ctx.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
+        await bot.close()
 
 class Athena:
     """Fortnite Item Shop Generator."""
