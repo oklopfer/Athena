@@ -47,7 +47,7 @@ class Athena:
 
                 shopImage = Athena.GenerateImage(self, date, itemShop)
 
-    def add_yellow_border(card, border_size=7):
+    def add_yellow_border(card, border_size=10):
         """Add a yellow border around an image."""
         draw = ImageDraw.Draw(card)
         width, height = card.size
@@ -364,6 +364,12 @@ class Athena:
             font=font,
         )
 
+        card.paste(
+            vbucks,
+            ImageUtil.CenterX(self, (vbucks.width + (textWidth + 5)), (card.width - 175), 495),
+            vbucks,
+        )
+
         textWidth, _ = font.getsize(shop_time)
         canvas.text(
             ImageUtil.CenterX(self, ((textWidth - 5)), (card.width + 140), 495),
@@ -373,12 +379,6 @@ class Athena:
         )
         if shop_time == "New!":
             card = self.add_yellow_border(card)
-
-        card.paste(
-            vbucks,
-            ImageUtil.CenterX(self, (vbucks.width + (textWidth + 5)), (card.width - 175), 495),
-            vbucks,
-        )
 
         font = ImageUtil.Font(self, 56)
         textWidth, _ = font.getsize(name)
