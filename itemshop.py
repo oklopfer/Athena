@@ -24,8 +24,8 @@ intents.message_content = True       # Enable the MESSAGE_CONTENT intent (if you
 intents.messages = True              # Enable the MESSAGES intent (if you need to receive message events)
 
 bot = commands.Bot(command_prefix='!', intents=intents)
-TOKEN = #'TOKEN_ID'
-CHANNEL_ID = #CHANNEL_ID
+TOKEN = 'DISCORD_BOT_TOKEN' # should be a string, with quotes
+CHANNEL_ID = `DISCORD_CHANNEL_ID` # should be an integer, no quotes
 
 @bot.event
 async def on_ready():
