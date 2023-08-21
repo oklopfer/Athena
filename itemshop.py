@@ -182,7 +182,6 @@ class Athena:
                     icon = item["items"][0]["images"]["icon"]
                 shopHistory = item["items"][0]["shopHistory"]
                 shopHistory_dates = [datetime.fromisoformat(date_string) for date_string in shopHistory]
-                days_difference = (shopHistory_dates[-1] - shopHistory_dates[-2]).days
                 if len(shopHistory_dates) < 2:
                     shop_time = "New!"
                 else:
