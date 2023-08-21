@@ -1,6 +1,8 @@
 import json
 import logging
 import math
+import discord
+from discord.ext import commands
 from math import ceil
 from sys import exit
 from time import sleep
@@ -16,6 +18,29 @@ coloredlogs.install(level="INFO", fmt="[%(asctime)s] %(message)s", datefmt="%I:%
 
 import warnings
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
+
+intents = discord.Intents.default()  # Use default intents
+intents.message_content = True       # Enable the MESSAGE_CONTENT intent (if you need to read message content)
+intents.messages = True              # Enable the MESSAGES intent (if you need to receive message events)
+
+bot = commands.Bot(command_prefix='!', intents=intents)
+TOKEN = #'TOKEN_ID'
+CHANNEL_ID = #CHANNEL_ID
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user.name} ({bot.user.id})')
+    channel = bot.get_channel(CHANNEL_ID)
+    if channel:
+        current_date = datetime.utcnow().strftime('%B %d, %Y')
+        with open('itemshop.png', 'rb') as img:
+            await channel.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
+
+@bot.command()
+async def upload(ctx):
+    current_date = datetime.utcnow().strftime('%B %d, %Y')
+    with open('itemshop.png', 'rb') as img:
+        await ctx.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
 
 class Athena:
     """Fortnite Item Shop Generator."""
@@ -399,6 +424,7 @@ class Athena:
 if __name__ == "__main__":
     try:
         Athena.main(Athena)
+        bot.run(TOKEN)
     except KeyboardInterrupt:
         log.info("Exiting...")
         exit()
