@@ -128,15 +128,19 @@ class Athena:
 
         all_items = featured + daily
         all_items.sort(key=lambda x: x["section"]["index"])
-        rows = max(0, ceil(len(all_items) / 6))
-        columns = math.ceil(math.sqrt(len(all_items)))
-        max_items_per_row = columns + 2
+        columns_raw = math.ceil(math.sqrt(len(all_items)))
+        columns = columns_raw + 2
         num_items = len(all_items)
+        rows = math.ceil(num_items / columns)
         if num_items <= 6:
-            width = 320 * num_items
+            width = 319 * num_items
         else:
-            width = 320 * max_items_per_row
-        shopImage = Image.new("RGBA", (width, (545 * (columns - 1) + 340) - 455))
+            width = 319 * columns
+        if rows <= 6:
+            height = 585 * rows + 400
+        else:
+            height = 565 * rows + 400
+        shopImage = Image.new("RGBA", (width, height))
 
         try:
             background = ImageUtil.Open(self, "background.png")
@@ -153,14 +157,18 @@ class Athena:
         logo = ImageUtil.Open(self, "logo.png")
         logo = ImageUtil.RatioResize(self, logo, 0, 210)
         shopImage.paste(
-            logo, ImageUtil.CenterX(self, logo.width, shopImage.width, 20), logo
+            logo, ImageUtil.CenterX(self, logo.width, shopImage.width, 100), logo
         )
 
+        if rows <= 6:
+            datesize = 72
+        else:
+            datesize = rows * 7
         canvas = ImageDraw.Draw(shopImage)
-        font = ImageUtil.Font(self, 48)
+        font = ImageUtil.Font(self, datesize)
         textWidth, _ = font.getsize(date)
         canvas.text(
-            ImageUtil.CenterX(self, textWidth, shopImage.width, 255),
+            ImageUtil.CenterX(self, textWidth, shopImage.width, 350),
             date,
             (255, 255, 255),
             font=font,
@@ -177,8 +185,8 @@ class Athena:
                 shopImage.paste(
                     card,
                     (
-                        ((max_items_per_row * 8) + ((i % max_items_per_row) * (card.width + 5))),
-                        355 + ((i // max_items_per_row) * (card.height + 5)),
+                        ((columns * 7) + ((i % columns) * (card.width + 5))),
+                        475 + ((i // columns) * (card.height + 5)),
                     ),
                     card,
                 )
