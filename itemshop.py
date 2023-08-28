@@ -320,26 +320,26 @@ class Athena:
                         f"Failed to open box_bottom_{extraRarity}.png, defaulted to Common"
                     )
                     layer = ImageUtil.Open(self, "box_bottom_common.png")
-
-                card.paste(
-                    layer,
-                    (
-                        (card.width - (layer.width + 9)),
-                        (9 + ((i // 1) * (layer.height))),
-                    ),
-                )
+                if "bundle" in item and item["bundle"] is None:
+                    card.paste(
+                        layer,
+                        (
+                            (card.width - (layer.width + 9)),
+                            (9 + ((i // 1) * (layer.height))),
+                        ),
+                    )
 
                 extraIcon = ImageUtil.Download(self, extraIcon)
                 extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
-
-                card.paste(
-                    extraIcon,
-                    (
-                        (card.width - (layer.width + 9)),
-                        (9 + ((i // 1) * (extraIcon.height))),
-                    ),
-                    extraIcon,
-                )
+                if "bundle" in item and item["bundle"] is None:
+                    card.paste(
+                        extraIcon,
+                        (
+                            (card.width - (layer.width + 9)),
+                            (9 + ((i // 1) * (extraIcon.height))),
+                        ),
+                        extraIcon,
+                    )
 
                 try:
                     layer = ImageUtil.Open(self, f"box_faceplate_{extraRarity}.png")
@@ -348,15 +348,15 @@ class Athena:
                         f"Failed to open box_faceplate_{extraRarity}.png, defaulted to Common"
                     )
                     layer = ImageUtil.Open(self, "box_faceplate_common.png")
-
-                card.paste(
-                    layer,
-                    (
-                        (card.width - (layer.width + 9)),
-                        (9 + ((i // 1) * (layer.height))),
-                    ),
-                    layer,
-                )
+                if "bundle" in item and item["bundle"] is None:
+                    card.paste(
+                        layer,
+                        (
+                            (card.width - (layer.width + 9)),
+                            (9 + ((i // 1) * (layer.height))),
+                        ),
+                        layer,
+                    )
 
                 i += 1
 
