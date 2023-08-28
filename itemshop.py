@@ -127,7 +127,12 @@ class Athena:
             return False
 
         all_items = featured + daily
-        all_items.sort(key=lambda x: x["section"]["index"])
+        def safe_key(x):
+            try:
+                return x["section"]["index"]
+            except (KeyError, TypeError):
+                return 0
+        all_items.sort(key=safe_key)
         columns_raw = math.ceil(math.sqrt(len(all_items)))
         columns = columns_raw + 2
         num_items = len(all_items)
