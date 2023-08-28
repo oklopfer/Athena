@@ -126,7 +126,8 @@ class Athena:
 
             return False
 
-        all_items = featured + daily
+        raw_items = featured + daily
+        all_items = [item for item in raw_items if "section" in item and item["section"] is not None]
         def safe_key(x):
             try:
                 return x["section"]["index"]
