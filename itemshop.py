@@ -212,9 +212,10 @@ class Athena:
 
         try:
             if "bundle" in item and item["bundle"] is not None:
-                name = item["bundle"]["name"]
+                name = item["bundle"]["name"].title()
                 icon = item["bundle"]["image"]
                 shop_time = "Bundle"
+                category = "bundle"
             else:
                 name = item["items"][0]["name"]
                 if "images" in item and item["images"]["icon"] is None:
@@ -231,8 +232,8 @@ class Athena:
                         shop_time = f"{days_difference} day"
                     else:
                         shop_time = f"{days_difference} days"
+                category = item["items"][0]["type"]["value"]
             rarity = item["items"][0]["rarity"]["value"]
-            category = item["items"][0]["type"]["value"]
             price = item["finalPrice"]
         except Exception as e:
             log.error(f"Failed to parse item {name} ({rarity}/{category}/{price}), {e}")
@@ -283,6 +284,8 @@ class Athena:
             icon = ImageUtil.RatioResize(self, icon, 285, 365)
         elif category == "wrap":
             icon = ImageUtil.RatioResize(self, icon, 230, 310)
+        elif (category == "bundle"):
+            icon = ImageUtil.RatioResize(self, icon, 285, 350)
         else:
             icon = ImageUtil.RatioResize(self, icon, 310, 390)
         if (category == "outfit"):
@@ -384,14 +387,24 @@ class Athena:
 
         canvas = ImageDraw.Draw(card)
 
-        font = ImageUtil.Font(self, 30)
-        textWidth, _ = font.getsize(f"{rarity.capitalize()} {category.capitalize()}")
-        canvas.text(
-            ImageUtil.CenterX(self, textWidth, card.width, 385),
-            f"{rarity.capitalize()} {category.capitalize()}",
-            blendColor,
-            font=font,
-        )
+        if "bundle" in item and item["bundle"] is not None:
+            font = ImageUtil.Font(self, 36)
+            textWidth, _ = font.getsize("Bundle")
+            canvas.text(
+                ImageUtil.CenterX(self, textWidth, card.width, 385),
+                "Bundle",
+                blendColor,
+                font=font,
+            )
+        else:
+            font = ImageUtil.Font(self, 30)
+            textWidth, _ = font.getsize(f"{rarity.capitalize()} {category.capitalize()}")
+            canvas.text(
+                ImageUtil.CenterX(self, textWidth, card.width, 385),
+                f"{rarity.capitalize()} {category.capitalize()}",
+                blendColor,
+                font=font,
+            )
 
         vbucks = ImageUtil.Open(self, "vbucks.png")
         vbucks = ImageUtil.RatioResize(self, vbucks, 25, 25)
