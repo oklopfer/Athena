@@ -217,7 +217,7 @@ class Athena:
                 shop_time = "Bundle"
             else:
                 name = item["items"][0]["name"]
-                if isinstance(item["items"][0]["images"]["featured"], dict):
+                if "images" in item and item["images"]["icon"] is None:
                     icon = item["items"][0]["images"]["featured"]
                 else:
                     icon = item["items"][0]["images"]["icon"]
