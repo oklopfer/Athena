@@ -7,6 +7,8 @@ from math import ceil
 from sys import exit
 from time import sleep
 from datetime import datetime
+from multiprocessing import Pool
+from functools import partial
 
 import coloredlogs
 from PIL import Image, ImageDraw
@@ -25,7 +27,7 @@ intents.messages = True              # Enable the MESSAGES intent (if you need t
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 TOKEN = 'DISCORD_BOT_TOKEN' # should be a string, with quotes
-CHANNEL_ID = `DISCORD_CHANNEL_ID` # should be an integer, no quotes
+CHANNEL_ID = 'DISCORD_CHANNEL_ID' # should be an integer, no quotes
 
 @bot.event
 async def on_ready():
@@ -180,25 +182,21 @@ class Athena:
             font=font,
         )
 
-        # Track grid position
-        i = 0
+        pool = Pool(16)
+        generate_card = partial(Athena.GenerateCard,self)
+        cards = pool.map(generate_card, all_items)
+        cards = [c for c in cards if c is not None]
 
-        for item in all_items:
-            card = Athena.GenerateCard(self, item)
-
-            if card is not None:
-
-                shopImage.paste(
-                    card,
-                    (
-                        ((columns * 7) + ((i % columns) * (card.width + 5))),
-                        475 + ((i // columns) * (card.height + 5)),
-                    ),
-                    card,
-                )
-
-                i += 1
-
+        for i,card in enumerate(cards):
+            shopImage.paste(
+                card,
+                (
+                    ((columns * 7) + ((i % columns) * (card.width + 5))),
+                    475 + ((i // columns) * (card.height + 5)),
+                ),
+                card,
+            )
+        
         try:
             shopImage.save("itemshop.png")
             log.info("Generated Item Shop image")
@@ -240,33 +238,24 @@ class Athena:
 
             return
 
-        if rarity == "frozen":
-            blendColor = (148, 223, 255)
-        elif rarity == "lava":
-            blendColor = (234, 141, 35)
-        elif rarity == "legendary":
-            blendColor = (211, 120, 65)
-        elif rarity == "dark":
-            blendColor = (251, 34, 223)
-        elif rarity == "starwars":
-            blendColor = (231, 196, 19)
-        elif rarity == "marvel":
-            blendColor = (197, 51, 52)
-        elif rarity == "dc":
-            blendColor = (84, 117, 199)
-        elif rarity == "icon":
-            blendColor = (54, 183, 183)
-        elif rarity == "shadow":
-            blendColor = (113, 113, 113)
-        elif rarity == "epic":
-            blendColor = (177, 91, 226)
-        elif rarity == "rare":
-            blendColor = (73, 172, 242)
-        elif rarity == "uncommon":
-            blendColor = (96, 170, 58)
-        elif rarity == "common":
-            blendColor = (190, 190, 190)
-        else:
+        colors = {
+            "frozen": (148, 223, 255),
+            "lava": (234, 141, 35),
+            "legendary": (211, 120, 65),
+            "dark": (251, 34, 223),
+            "starwars": (231, 196, 19),
+            "marvel": (197, 51, 52),
+            "dc": (84, 117, 199),
+            "icon": (54, 183, 183),
+            "shadow": (113, 113, 113),
+            "epic": (177, 91, 226),
+            "rare": (73, 172, 242),
+            "uncommon": (96, 170, 58),
+            "common": (190, 190, 190),
+        }
+
+        blendColor = colors[rarity]
+        if blendColor is None:
             blendColor = (255, 255, 255)
 
         card = Image.new("RGBA", (300, 545))
