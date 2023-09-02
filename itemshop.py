@@ -409,6 +409,7 @@ class Athena:
         vbucks = ImageUtil.Open(self, "vbucks.png")
         vbucks = ImageUtil.RatioResize(self, vbucks, 25, 25)
 
+        font = ImageUtil.Font(self, 30)
         price = str(f"{price:,}")
         textWidth, _ = font.getsize(price)
         canvas.text(
