@@ -252,6 +252,8 @@ class Athena:
             "rare": (73, 172, 242),
             "uncommon": (96, 170, 58),
             "common": (190, 190, 190),
+            "gaming": (99, 99, 255),
+            "slurp": (85, 150, 190),
         }
 
         blendColor = colors[rarity]
