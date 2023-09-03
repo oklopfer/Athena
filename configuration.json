@@ -1,4 +1,9 @@
 {
     "delayStart": 0,
-    "language": "en"
+    "language": "en",
+    "discord": {
+        "enabled": false,
+        "TOKEN": "DISCORD_BOT_TOKEN",
+        "CHANNEL_ID": 1234567890
+    }
 }

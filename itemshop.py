@@ -21,31 +21,6 @@ coloredlogs.install(level="INFO", fmt="[%(asctime)s] %(message)s", datefmt="%I:%
 import warnings
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
-intents = discord.Intents.default()  # Use default intents
-intents.message_content = True       # Enable the MESSAGE_CONTENT intent (if you need to read message content)
-intents.messages = True              # Enable the MESSAGES intent (if you need to receive message events)
-
-bot = commands.Bot(command_prefix='!', intents=intents)
-TOKEN = 'DISCORD_BOT_TOKEN' # should be a string, with quotes
-CHANNEL_ID = 'DISCORD_CHANNEL_ID' # should be an integer, no quotes
-
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user.name} ({bot.user.id})')
-    channel = bot.get_channel(CHANNEL_ID)
-    if channel:
-        current_date = datetime.utcnow().strftime('%B %d, %Y')
-        with open('itemshop.png', 'rb') as img:
-            await channel.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
-            await bot.close()
-
-@bot.command()
-async def upload(ctx):
-    current_date = datetime.utcnow().strftime('%B %d, %Y')
-    with open('itemshop.png', 'rb') as img:
-        await ctx.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
-        await bot.close()
-
 class Athena:
     """Fortnite Item Shop Generator."""
 
@@ -75,6 +50,34 @@ class Athena:
                 log.info(f"Retrieved Item Shop for {date}")
 
                 shopImage = Athena.GenerateImage(self, date, itemShop)
+                intents = discord.Intents.default()  # Use default intents
+                intents.message_content = True       # Enable the MESSAGE_CONTENT intent (if you need to read message content)
+                intents.messages = True              # Enable the MESSAGES intent (if you need to receive message events)
+
+                bot = commands.Bot(command_prefix='!', intents=intents)
+
+                TOKEN = self.token # should be a string, with quotes
+                CHANNEL_ID = self.channel # should be an integer, no quotes
+
+                @bot.event
+                async def on_ready():
+                    print(f'Logged in as {bot.user.name} ({bot.user.id})')
+                    channel = bot.get_channel(CHANNEL_ID)
+                    if channel:
+                        current_date = datetime.utcnow().strftime('%B %d, %Y')
+                        with open('itemshop.png', 'rb') as img:
+                            await channel.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
+                            await bot.close()
+
+                @bot.command()
+                async def upload(ctx):
+                    current_date = datetime.utcnow().strftime('%B %d, %Y')
+                    with open('itemshop.png', 'rb') as img:
+                        await ctx.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
+                        await bot.close()
+
+                if self.discordon is True:
+                    bot.run(TOKEN)
 
     def add_yellow_border(card, border_size=10):
         """Add a yellow border around an image."""
@@ -102,6 +105,9 @@ class Athena:
         try:
             self.delay = configuration["delayStart"]
             self.language = configuration["language"]
+            self.discordon = configuration["discord"]["enabled"]
+            self.token = configuration["discord"]["TOKEN"]
+            self.channel = configuration["discord"]["CHANNEL_ID"]
 
             log.info("Loaded configuration")
 
@@ -445,7 +451,6 @@ class Athena:
 if __name__ == "__main__":
     try:
         Athena.main(Athena)
-        bot.run(TOKEN)
     except KeyboardInterrupt:
         log.info("Exiting...")
         exit()
