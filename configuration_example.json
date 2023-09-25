@@ -8,8 +8,8 @@
     },
     "reddit": {
         "enabled": false,
-        "client_id": "DISCORD_BOT_TOKEN",
-        "client_secret": "1234567890",
+        "client_id": "client_id",
+        "client_secret": "client_secret",
         "user_agent": "agent",
         "username": "username",
         "password": "password",
