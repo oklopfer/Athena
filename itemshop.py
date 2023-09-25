@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import discord
+import praw
 from discord.ext import commands
 from math import ceil
 from sys import exit
@@ -76,8 +77,26 @@ class Athena:
                         await ctx.send(f"Daily Item Shop {current_date}:", file=discord.File(img, 'itemshop.png'))
                         await bot.close()
 
+                reddit = praw.Reddit(
+                    client_id=self.client_id,
+                    client_secret=self.client_secret,
+                    user_agent=self.user_agent,
+                    username=self.username,
+                    password=self.password
+                )
+
+                print(reddit.read_only)
+                # Output: False
+                
+                formatted_date = datetime.utcnow().strftime('%Y-%m-%d')
+                self.title = f"Daily Item Shop and Purchase Advice Megathread ({formatted_date})"
+                self.image_path = "itemshop.png"
+
                 if self.discordon is True:
                     bot.run(TOKEN)
+
+                if self.redditon is True:
+                    reddit.subreddit(self.sub_reddit).submit_image(title=self.title, image_path=self.image_path, flair_id=self.flair_id)
 
     def add_yellow_border(card, border_size=10):
         """Add a yellow border around an image."""
@@ -108,6 +127,14 @@ class Athena:
             self.discordon = configuration["discord"]["enabled"]
             self.token = configuration["discord"]["TOKEN"]
             self.channel = configuration["discord"]["CHANNEL_ID"]
+            self.redditon = configuration["reddit"]["enabled"]
+            self.client_id = configuration["reddit"]["client_id"]
+            self.client_secret = configuration["reddit"]["client_secret"]
+            self.user_agent = configuration["reddit"]["user_agent"]
+            self.username = configuration["reddit"]["username"]
+            self.password = configuration["reddit"]["password"]
+            self.sub_reddit = configuration["reddit"]["sub_reddit"]
+            self.flair_id = configuration["reddit"]["flair_id"]
 
             log.info("Loaded configuration")
 
