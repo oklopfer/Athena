@@ -341,31 +341,18 @@ class Athena:
                 try:
                     extraRarity = extra["rarity"]["value"]
                     extraIcon = extra["images"]["smallIcon"]
-                except Exception as e:
-                    log.error(f"Failed to parse item {name}, {e}")
-
-                    return
-
-                try:
-                    layer = ImageUtil.Open(self, f"box_bottom_{extraRarity}.png")
-                except FileNotFoundError:
-                    log.warn(
-                        f"Failed to open box_bottom_{extraRarity}.png, defaulted to Common"
-                    )
-                    layer = ImageUtil.Open(self, "box_bottom_common.png")
-                if "bundle" in item and item["bundle"] is None:
-                    card.paste(
-                        layer,
-                        (
-                            (card.width - (layer.width + 9)),
-                            (9 + ((i // 1) * (layer.height))),
-                        ),
-                    )
-
-                extraIcon = ImageUtil.Download(self, extraIcon)
-                extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
-                try:
+                    extraIcon = ImageUtil.Download(self, extraIcon)
+                    extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
                     if "bundle" in item and item["bundle"] is None:
+                        try:
+                            layer = ImageUtil.Open(self, f"box_bottom_{extraRarity}.png")
+                        except FileNotFoundError:
+                            log.warn(
+                                f"Failed to open box_bottom_{extraRarity}.png, defaulted to Common"
+                            )
+                            layer = ImageUtil.Open(self, "box_bottom_common.png")
+
+                        # we need to check that the extra-item icon isn't broken...
                         card.paste(
                             extraIcon,
                             (
@@ -375,14 +362,33 @@ class Athena:
                             extraIcon,
                         )
 
-                    try:
-                        layer = ImageUtil.Open(self, f"box_faceplate_{extraRarity}.png")
-                    except FileNotFoundError:
-                        log.warn(
-                            f"Failed to open box_faceplate_{extraRarity}.png, defaulted to Common"
+                        # then we can overwrite it
+                        card.paste(
+                            layer,
+                            (
+                                (card.width - (layer.width + 9)),
+                                (9 + ((i // 1) * (layer.height))),
+                            ),
                         )
-                        layer = ImageUtil.Open(self, "box_faceplate_common.png")
-                    if "bundle" in item and item["bundle"] is None:
+
+                        # and put it back on top, if it isn't broken
+                        card.paste(
+                            extraIcon,
+                            (
+                                (card.width - (layer.width + 9)),
+                                (9 + ((i // 1) * (extraIcon.height))),
+                            ),
+                            extraIcon,
+                        )
+
+                        try:
+                            layer = ImageUtil.Open(self, f"box_faceplate_{extraRarity}.png")
+                        except FileNotFoundError:
+                            log.warn(
+                                f"Failed to open box_faceplate_{extraRarity}.png, defaulted to Common"
+                            )
+                            layer = ImageUtil.Open(self, "box_faceplate_common.png")
+
                         card.paste(
                             layer,
                             (
@@ -394,8 +400,9 @@ class Athena:
 
                     i += 1
 
-                except:
-                    return
+                # this is where we are confirming the extra item is broken
+                except Exception as e:
+                    log.error(f"Failed to parse extra item for {name}, {e}")
 
         try:
             layer = ImageUtil.Open(self, f"card_faceplate_{rarity}.png")
