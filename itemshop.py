@@ -264,6 +264,8 @@ class Athena:
                         shop_time = f"{days_difference} days"
                 category = item["items"][0]["type"]["value"]
             rarity = item["items"][0]["rarity"]["value"]
+            if rarity == "gaminglegends":
+                rarity = "gaming"
             price = item["finalPrice"]
         except Exception as e:
             log.error(f"Failed to parse item {name} ({rarity}/{category}/{price}), {e}")
