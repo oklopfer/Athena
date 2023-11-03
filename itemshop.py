@@ -167,16 +167,29 @@ class Athena:
                 return x["section"]["index"]
             except (KeyError, TypeError):
                 return 0
-        all_items.sort(key=safe_key)
-        columns_raw = math.ceil(math.sqrt(len(all_items)))
-        columns = columns_raw + 2
         num_items = len(all_items)
+        if num_items == 0:
+            all_items = [item for item in raw_items if "sectionId" in item and item["sectionId"] is not None]
+            def safe_key(x):
+                try:
+                    return x["sectionId"]
+                except (KeyError, TypeError):
+                    return 0
+        all_items.sort(key=safe_key)
+        num_items = len(all_items)
+        columns_raw = math.ceil(math.sqrt(len(all_items)))
+        if num_items <= 8:
+            columns = columns_raw + 1
+        else:
+            columns = columns_raw + 2
         rows = math.ceil(num_items / columns)
-        if num_items <= 6:
-            width = 319 * num_items
+        if num_items <= 8:
+            width = 319 * math.ceil(num_items / 2)
         else:
             width = 319 * columns
-        if rows <= 6:
+        if rows <= 3:
+            height = 600 * rows + 400
+        elif rows <= 6:
             height = 585 * rows + 400
         else:
             height = 565 * rows + 400
@@ -195,7 +208,10 @@ class Athena:
             shopImage.paste((18, 18, 18), [0, 0, shopImage.size[0], shopImage.size[1]])
 
         logo = ImageUtil.Open(self, "logo.png")
-        logo = ImageUtil.RatioResize(self, logo, 0, 210)
+        if columns <= 6:
+            logo = ImageUtil.RatioResize(self, logo, 0, 190)
+        else:
+            logo = ImageUtil.RatioResize(self, logo, 0, 210)
         shopImage.paste(
             logo, ImageUtil.CenterX(self, logo.width, shopImage.width, 100), logo
         )
@@ -235,7 +251,7 @@ class Athena:
 
             return True
         except Exception as e:
-            log.critical(f"Failed to save Item Shop image, {e}")
+            log.critical(f"Failed to save Item Shop image, {e}\nImage Info:\nrows: {rows} x columns: {columns}\nwidth: {width} x height: {height}\ncount: {num_items}")
 
     def GenerateCard(self, item: dict):
         """Return the card image for the provided Fortnite Item Shop item."""
