@@ -256,9 +256,18 @@ class Athena:
     def GenerateCard(self, item: dict):
         """Return the card image for the provided Fortnite Item Shop item."""
 
+        def title_case(text):
+            words = text.split()
+            formatted_words = []
+            for word in words:
+                formatted_word = word[0].upper() + word[1:].lower()
+                formatted_word = formatted_word.replace("'S", "'s")
+                formatted_words.append(formatted_word)
+            return ' '.join(formatted_words)
+
         try:
             if "bundle" in item and item["bundle"] is not None:
-                name = item["bundle"]["name"].title()
+                name = title_case(item["bundle"]["name"])
                 icon = item["bundle"]["image"]
                 shop_time = "Bundle"
                 category = "bundle"
