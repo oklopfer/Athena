@@ -178,7 +178,9 @@ class Athena:
         all_items.sort(key=safe_key)
         num_items = len(all_items)
         columns_raw = math.ceil(math.sqrt(len(all_items)))
-        if num_items <= 8:
+        if num_items <= 6:
+            columns = columns_raw
+        elif num_items <= 8:
             columns = columns_raw + 1
         else:
             columns = columns_raw + 2
@@ -208,7 +210,9 @@ class Athena:
             shopImage.paste((18, 18, 18), [0, 0, shopImage.size[0], shopImage.size[1]])
 
         logo = ImageUtil.Open(self, "logo.png")
-        if columns <= 6:
+        if columns <= 3:
+            logo = ImageUtil.RatioResize(self, logo, 0, 140)
+        elif columns <= 6:
             logo = ImageUtil.RatioResize(self, logo, 0, 190)
         else:
             logo = ImageUtil.RatioResize(self, logo, 0, 210)
