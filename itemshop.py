@@ -161,20 +161,12 @@ class Athena:
             return False
 
         raw_items = featured
-        all_items = [item for item in raw_items if "section" in item and item["section"] is not None]
+        all_items = [item for item in raw_items if "sectionId" in item and item["sectionId"] is not None]
         def safe_key(x):
             try:
-                return x["section"]["index"]
+                return x["sectionId"]
             except (KeyError, TypeError):
                 return 0
-        num_items = len(all_items)
-        if num_items == 0:
-            all_items = [item for item in raw_items if "sectionId" in item and item["sectionId"] is not None]
-            def safe_key(x):
-                try:
-                    return x["sectionId"]
-                except (KeyError, TypeError):
-                    return 0
         all_items.sort(key=safe_key)
         num_items = len(all_items)
         columns_raw = math.ceil(math.sqrt(len(all_items)))
