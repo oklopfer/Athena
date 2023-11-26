@@ -162,12 +162,23 @@ class Athena:
 
         raw_items = featured
         all_items = [item for item in raw_items if "sectionId" in item and item["sectionId"] is not None]
-        def safe_key(x):
+        def safe_section_id(x):
             try:
                 return x["sectionId"]
             except (KeyError, TypeError):
                 return 0
-        all_items.sort(key=safe_key)
+
+        def safe_itemset(x):
+            try:
+                return x["items"][0]["set"]["value"]
+            except:
+                itemid = item["items"][0]["id"]
+                return f"ZZZ{itemid}"
+
+        for item in all_items:
+            item["itemset"] = safe_itemset(item)
+
+        all_items.sort(key=lambda x: (safe_section_id(x), x["itemset"]))
         num_items = len(all_items)
         columns_raw = math.ceil(math.sqrt(len(all_items)))
         if num_items <= 6:
@@ -184,7 +195,7 @@ class Athena:
         if rows <= 3:
             height = 600 * rows + 400
         elif rows <= 6:
-            height = 585 * rows + 400
+            height = 580 * rows + 400
         else:
             height = 565 * rows + 400
         shopImage = Image.new("RGBA", (width, height))
