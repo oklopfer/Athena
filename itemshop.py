@@ -212,29 +212,60 @@ class Athena:
             log.warn("Failed to open background.png, defaulting to dark gray")
             shopImage.paste((18, 18, 18), [0, 0, shopImage.size[0], shopImage.size[1]])
 
-        logo = ImageUtil.Open(self, "logo.png")
-        if columns <= 3:
-            logo = ImageUtil.RatioResize(self, logo, 0, 140)
-        elif columns <= 6:
-            logo = ImageUtil.RatioResize(self, logo, 0, 190)
-        else:
-            logo = ImageUtil.RatioResize(self, logo, 0, 210)
-        shopImage.paste(
-            logo, ImageUtil.CenterX(self, logo.width, shopImage.width, 100), logo
-        )
+        def calculate_sizes(columns):
+            ranges = {
+                (1, 3): (15, 28, 28, 275, 400, 100),
+                (4, 5): (14, 26, 26, 200, 350, 100),
+                (6, 7): (12, 24, 24, 150, 350, 200),
+                (8, 10): (9, 21, 21, 125, 350, 200),
+                (11, 12): (9, 18, 18, 125, 350, 200),
+                (13, 16): (7, 15, 15, 125, 350, 200),
+                (17, 18): (6, 13, 13, 175, 350, 200),
+                (19, 21): (4, 11, 11, 175, 350, 200),
+                (22, float('inf')): (3, 10, 10, 175, 350, 200)
+            }
 
-        if rows <= 6:
-            datesize = 72
-        else:
-            datesize = rows * 7
+            for (start, end), values in ranges.items():
+                if start <= columns <= end:
+                    return values
+
+        datesize, codesize, subfontsize, title_top, date_top, push = calculate_sizes(columns)
+        datesize = datesize * columns
+        codesize = codesize * columns
+        subfontsize = subfontsize * columns
+
         canvas = ImageDraw.Draw(shopImage)
         font = ImageUtil.Font(self, datesize)
         textWidth, _ = font.getsize(date)
         canvas.text(
-            ImageUtil.CenterX(self, textWidth, shopImage.width, 350),
+            ImageUtil.CenterX(self, textWidth, (textWidth + push), date_top),
             date,
             (255, 255, 255),
             font=font,
+        )
+        canvas.text(
+            ImageUtil.CenterX(self, textWidth, (shopImage.width * 2 - (textWidth + push)), date_top),
+            "Use our code! #EpicPartner",
+            (255, 255, 255),
+            font=font,
+        )
+        creator_code="FNFASHION"
+        code_font = ImageUtil.TitleFont(self, codesize)
+        textWidth, _ = code_font.getsize(creator_code)
+        canvas.text(
+            ImageUtil.CenterX(self, textWidth, (shopImage.width * 2 - (textWidth + push)), title_top),
+            creator_code,
+            (255, 255, 255),
+            font=code_font,
+        )
+        subreddit_name="r/FortniteFashion"
+        sub_font = ImageUtil.TitleFont(self, subfontsize)
+        textWidth, _ = code_font.getsize(subreddit_name)
+        canvas.text(
+            ImageUtil.CenterX(self, textWidth, (textWidth + push), title_top),
+            subreddit_name,
+            (255, 255, 255),
+            font=sub_font,
         )
 
         pool = Pool(16)

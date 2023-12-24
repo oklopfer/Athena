@@ -137,3 +137,44 @@ class ImageUtil:
             textWidth, _ = font.getsize(text)
 
         return ImageUtil.Font(self, size), textWidth, change
+
+    def TitleFont(
+        self,
+        size: int,
+        font: str = "BurbankBigBoldCondensed-Black.otf",
+        directory: str = "assets/fonts/",
+    ):
+        """Return a font object with the specified font file and size."""
+
+        try:
+            return ImageFont.truetype(f"{directory}{font}", size)
+        except OSError:
+            log.warn(
+                "BurbankBigBoldCondensed-Black.otf not found, defaulted font to LuckiestGuy-Regular.ttf"
+            )
+
+            return ImageFont.truetype(f"{directory}LuckiestGuy-Regular.ttf", size)
+        except Exception as e:
+            log.error(f"Failed to load font, {e}")
+
+    def FitTitleTextX(
+        self,
+        text: str,
+        size: int,
+        maxSize: int,
+        font: str = "BurbankBigBoldCondensed-Black.otf",
+    ):
+        """Return the font and width which fits the provided text within the specified maxiumum width."""
+
+        font = ImageUtil.Font(self, size)
+        textWidth, _ = font.getsize(text)
+        change = 0
+
+        while textWidth >= maxSize:
+            change += 1
+            size -= 1
+            font = ImageUtil.Font(self, size)
+            textWidth, _ = font.getsize(text)
+
+        return ImageUtil.Font(self, size), textWidth, change
+
