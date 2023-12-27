@@ -243,6 +243,8 @@ class Athena:
             (255, 255, 255),
             font=font,
         )
+        below_code="Use our code! #EpicPartner"
+        textWidth, _ = font.getsize(below_code)
         canvas.text(
             ImageUtil.CenterX(self, textWidth, (shopImage.width * 2 - (textWidth + push)), date_top),
             "Use our code! #EpicPartner",
