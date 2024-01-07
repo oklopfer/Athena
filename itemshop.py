@@ -406,6 +406,8 @@ class Athena:
             for extra in item["items"][1:]:
                 try:
                     extraRarity = extra["rarity"]["value"]
+                    if  extraRarity == "gaminglegends":
+                        extraRarity = "gaming"
                     extraIcon = extra["images"]["smallIcon"]
                     extraIcon = ImageUtil.Download(self, extraIcon)
                     extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
