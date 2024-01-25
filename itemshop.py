@@ -150,17 +150,23 @@ class Athena:
         """
 
         try:
-            featured = itemShop["featured"]["entries"]
+            featured = itemShop["featured"]["entries"] if "featured" in itemShop and "entries" in itemShop["featured"] else []
+            daily = itemShop["daily"]["entries"] if "daily" in itemShop and "entries" in itemShop["daily"] else []
 
-            # Ensure Featured has at least 1 item
-            if (len(featured) <= 0):
-                raise Exception(f"Featured: {len(featured)}")
+            raw_items = []
+            if featured:
+                raw_items.extend(featured)
+            if daily:
+                raw_items.extend(daily)
+                
+            if not raw_items:
+                log.warning("No items in the item shop")
+                return False
+
         except Exception as e:
             log.critical(f"Failed to parse Item Shop items, {e}")
-
             return False
 
-        raw_items = featured
         all_items = [item for item in raw_items if "sectionId" in item and item["sectionId"] is not None]
         def safe_section_id(x):
             try:
