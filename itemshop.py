@@ -150,14 +150,20 @@ class Athena:
         """
 
         try:
-            featured = itemShop["featured"]["entries"] if "featured" in itemShop and "entries" in itemShop["featured"] else []
-            daily = itemShop["daily"]["entries"] if "daily" in itemShop and "entries" in itemShop["daily"] else []
+            featured = itemShop["featured"]["entries"] if "featured" in itemShop and itemShop["featured"] is not None and "entries" in itemShop["featured"] else []
+            daily = itemShop["daily"]["entries"] if "daily" in itemShop and itemShop["daily"] is not None and "entries" in itemShop["daily"] else []
+            votes = itemShop["votes"]["entries"] if "votes" in itemShop and itemShop["votes"] is not None and "entries" in itemShop["votes"] else []
+            voteWinners = itemShop["voteWinners"]["entries"] if "voteWinners" in itemShop and itemShop["voteWinners"] is not None and "entries" in itemShop["voteWinners"] else []
 
             raw_items = []
             if featured:
                 raw_items.extend(featured)
             if daily:
                 raw_items.extend(daily)
+            if votes:
+                raw_items.extend(votes)
+            if voteWinners:
+                raw_items.extend(voteWinners)
                 
             if not raw_items:
                 log.warning("No items in the item shop")
