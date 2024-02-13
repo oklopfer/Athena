@@ -541,6 +541,40 @@ class Athena:
         vbucks = ImageUtil.Open(self, "vbucks.png")
         vbucks = ImageUtil.RatioResize(self, vbucks, 25, 25)
 
+        font = ImageUtil.Font(self, 16)
+        if shop_time_flag != "bundle":
+            if total_appearances == 1:
+                textWidth, _ = font.getsize("First")
+                canvas.text(
+                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 252), 350),
+                    "First",
+                    blendColor,
+                    font=font,
+                )
+                textWidth, _ = font.getsize("Shop Visit!")
+                canvas.text(
+                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 235), 366),
+                    "Shop Visit!",
+                    blendColor,
+                    font=font,
+                )
+            else:
+                total_appearances = str(total_appearances)
+                textWidth, _ = font.getsize(total_appearances)
+                canvas.text(
+                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 255), 350),
+                    total_appearances,
+                    blendColor,
+                    font=font,
+                )
+                textWidth, _ = font.getsize("Shop Visits")
+                canvas.text(
+                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 235), 366),
+                    "Shop Visits",
+                    blendColor,
+                    font=font,
+                )
+
         font = ImageUtil.Font(self, 30)
         price = str(f"{price:,}")
         textWidth, _ = font.getsize(price)
