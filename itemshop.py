@@ -323,6 +323,7 @@ class Athena:
                 icon = item["bundle"]["image"]
                 shop_time = "Bundle"
                 category = "bundle"
+                shop_time_flag = "bundle"
             else:
                 name = item["items"][0]["name"]
                 if "images" in item and item["images"]["icon"] is None:
@@ -331,14 +332,30 @@ class Athena:
                     icon = item["items"][0]["images"]["icon"]
                 shopHistory = item["items"][0]["shopHistory"]
                 shopHistory_dates = [datetime.fromisoformat(date_string) for date_string in shopHistory]
-                if len(shopHistory_dates) < 2:
+                total_appearances = len(shopHistory_dates)
+                if total_appearances < 2:
                     shop_time = "New!"
+                    shop_time_flag = "new"
                 else:
                     days_difference = (shopHistory_dates[-1] - shopHistory_dates[-2]).days
                     if days_difference == 1:
-                        shop_time = f"{days_difference} day"
+                        current_date = shopHistory_dates[-1]
+                        days_consecutive = 1
+                        for i in range(total_appearances - 2, -1, -1):
+                            if (current_date - shopHistory_dates[i]).days == 1:
+                                days_consecutive += 1
+                                current_date = shopHistory_dates[i]
+                            else:
+                                break
+                        if days_consecutive > 1:
+                            shop_time = f"In for {days_consecutive} days"
+                            shop_time_flag = "consecutive"
+                        else:
+                            shop_time = "1 day ago"
+                            shop_time_flag = "since"
                     else:
-                        shop_time = f"{days_difference} days"
+                        shop_time = f"{days_difference} days ago"
+                        shop_time_flag = "since"
                 category = item["items"][0]["type"]["value"]
             rarity = item["items"][0]["rarity"]["value"]
             if rarity == "gaminglegends":
@@ -541,8 +558,16 @@ class Athena:
         )
 
         textWidth, _ = font.getsize(shop_time)
+        if shop_time_flag == "new":
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 20)), (card.width + textWidth * 2.5), 495)
+        elif shop_time_flag == "bundle":
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth / 1.5)), (card.width + textWidth * 2), 495)
+        elif shop_time_flag == "consecutive":
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 10)), (card.width + textWidth / 1.5), 495)
+        elif shop_time_flag == "since":
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 5)), (card.width + textWidth - 25), 495)
         canvas.text(
-            ImageUtil.CenterX(self, ((textWidth - 5)), (card.width + 140), 495),
+            shop_time_paste,
             shop_time,
             blendColor,
             font=font,
