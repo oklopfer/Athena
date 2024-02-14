@@ -419,7 +419,11 @@ class Athena:
                 combined_icon = Image.merge("RGBA", (r, g, b, alpha))
                 card.paste(combined_icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
             else:
-                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                try:
+                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                except Exception as e:
+                    log.warn(f"Failed to paste item {name} ({rarity}/{category}/{price}) properly: {e}.")
+                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=None)
         else:
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
