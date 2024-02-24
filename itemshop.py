@@ -330,6 +330,8 @@ class Athena:
                     icon = item["items"][0]["images"]["featured"]
                 else:
                     icon = item["items"][0]["images"]["icon"]
+                if icon is None:
+                    icon = item["items"][0]["images"]["smallIcon"]
                 shopHistory = item["items"][0]["shopHistory"]
                 shopHistory_dates = [datetime.fromisoformat(date_string) for date_string in shopHistory]
                 total_appearances = len(shopHistory_dates)
@@ -422,8 +424,11 @@ class Athena:
                 try:
                     card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
                 except Exception as e:
-                    log.warn(f"Failed to paste item {name} ({rarity}/{category}/{price}) properly: {e}.")
-                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=None)
+                    log.warn(f"{e} for {name} ({rarity}/{category}/{price}), using smallIcon.")
+                    icon = item["items"][0]["images"]["smallIcon"]
+                    icon = ImageUtil.Download(self, icon)
+                    icon = ImageUtil.RatioResize(self, icon, 285, 365)
+                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
         else:
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
