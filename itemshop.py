@@ -400,6 +400,9 @@ class Athena:
 
         card.paste(layer)
 
+        offerimage = icon.replace('icon.png', 'offerimage.png')
+        offerimage = offerimage.replace('cosmetics/br/', 'cosmetics/br/materialinstances/mi_')
+
         icon = ImageUtil.Download(self, icon)
         if (category == "outfit") or (category == "emote"):
             icon = ImageUtil.RatioResize(self, icon, 285, 365)
@@ -425,8 +428,11 @@ class Athena:
                     try:
                         card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
                     except Exception as e:
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up")
-                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying offerimage.")
+                        icon = offerimage
+                        icon = ImageUtil.Download(self, icon)
+                        icon = ImageUtil.RatioResize(self, icon, 285, 365)
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
         else:
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
@@ -443,7 +449,7 @@ class Athena:
                     try:
                         card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
                     except Exception as e:
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up")
+                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up.")
                         card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
 
         if len(item["items"]) > 1:
