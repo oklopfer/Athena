@@ -409,18 +409,12 @@ class Athena:
             icon = ImageUtil.RatioResize(self, icon, 285, 350)
         else:
             icon = ImageUtil.RatioResize(self, icon, 310, 390)
-        if (category == "outfit"):
+        if (category == "emote"):
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
+                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
             else:
                 alpha = None
-            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width), mask=alpha)
-        elif (category == "emote"):
-            if icon.mode == "RGBA":
-                r, g, b, alpha = icon.split()
-                combined_icon = Image.merge("RGBA", (r, g, b, alpha))
-                card.paste(combined_icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
-            else:
                 try:
                     card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
                 except Exception as e:
@@ -428,13 +422,29 @@ class Athena:
                     icon = item["items"][0]["images"]["smallIcon"]
                     icon = ImageUtil.Download(self, icon)
                     icon = ImageUtil.RatioResize(self, icon, 285, 365)
-                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                    try:
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                    except Exception as e:
+                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up")
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
         else:
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
+                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
             else:
                 alpha = None
-            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                try:
+                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                except Exception as e:
+                    log.warn(f"{e} for {name} ({rarity}/{category}/{price}), using smallIcon.")
+                    icon = item["items"][0]["images"]["smallIcon"]
+                    icon = ImageUtil.Download(self, icon)
+                    icon = ImageUtil.RatioResize(self, icon, 285, 365)
+                    try:
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                    except Exception as e:
+                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up")
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
 
         if len(item["items"]) > 1:
             # Track grid position
