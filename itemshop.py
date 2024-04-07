@@ -432,7 +432,10 @@ class Athena:
                         icon = offerimage
                         icon = ImageUtil.Download(self, icon)
                         icon = ImageUtil.RatioResize(self, icon, 285, 365)
-                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                        try:
+                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                        except Exception as e:
+                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
         else:
             if icon.mode == "RGBA":
                 alpha = icon.split()[3]
