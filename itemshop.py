@@ -188,7 +188,7 @@ class Athena:
                 return f"ZZZ{itemid}"
 
         for item in all_items:
-            item["itemset"] = safe_itemset(item)
+            item["itemset"] = str(safe_itemset(item))
 
         all_items.sort(key=lambda x: (safe_section_id(x), x["itemset"]))
         num_items = len(all_items)
