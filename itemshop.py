@@ -422,9 +422,9 @@ class Athena:
             except Exception as e:
                 log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying smallIcon.")
                 icon = item["items"][0]["images"]["smallIcon"]
-                icon = ImageUtil.Download(self, icon)
-                icon = ImageUtil.RatioResize(self, icon, 285, 365)
                 try:
+                    icon = ImageUtil.Download(self, icon)
+                    icon = ImageUtil.RatioResize(self, icon, 285, 365)
                     card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
                 except Exception as e:
                     if (category == "emote"):
@@ -433,12 +433,19 @@ class Athena:
                     else:
                         log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying featured.")
                         icon = item["items"][0]["images"]["featured"]
+                    try:
                         icon = ImageUtil.Download(self, icon)
                         icon = ImageUtil.RatioResize(self, icon, 285, 365)
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                    except Exception as e:
+                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying without transparency.")
                         try:
-                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
                         except Exception as e:
-                            log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up.")
+                            log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
+                            icon = item["items"][0]["images"]["smallIcon"]
+                            icon = ImageUtil.Download(self, icon)
+                            icon = ImageUtil.RatioResize(self, icon, 285, 365)
                             card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
 
         if len(item["items"]) > 1:
