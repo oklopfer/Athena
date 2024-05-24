@@ -433,13 +433,13 @@ class Athena:
                     else:
                         log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying featured.")
                         icon = item["items"][0]["images"]["featured"]
-                    icon = ImageUtil.Download(self, icon)
-                    icon = ImageUtil.RatioResize(self, icon, 285, 365)
-                    try:
-                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
-                    except Exception as e:
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up.")
-                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                        icon = ImageUtil.Download(self, icon)
+                        icon = ImageUtil.RatioResize(self, icon, 285, 365)
+                        try:
+                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
+                        except Exception as e:
+                            log.warn(f"{e} for {name} ({rarity}/{category}/{price}), giving up.")
+                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
 
         if len(item["items"]) > 1:
             # Track grid position
