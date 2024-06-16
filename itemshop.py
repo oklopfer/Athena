@@ -400,10 +400,18 @@ class Athena:
 
         card.paste(layer)
 
-        offerimage = icon.replace('icon.png', 'offerimage.png')
-        offerimage = offerimage.replace('cosmetics/br/', 'cosmetics/br/materialinstances/mi_')
-
-        icon = ImageUtil.Download(self, icon)
+        try:
+            offerimage = icon.replace('^icon.png', 'offerimage.png')
+            offerimage = offerimage.replace('cosmetics/br/', 'cosmetics/br/materialinstances/mi_')
+        except Exception as e:
+            log.warn(f"No offerimage for {name}")
+            offerimage = "https://None"
+        try:
+            icon = ImageUtil.Download(self, icon)
+        except Exception as e:
+            log.warn((f"Icon for {name} not found, switching to featured"))
+            icon = item["items"][0]["images"]["featured"]
+            icon = ImageUtil.Download(self, icon)
         if (category == "outfit") or (category == "emote"):
             icon = ImageUtil.RatioResize(self, icon, 285, 365)
         elif category == "wrap":
@@ -454,14 +462,19 @@ class Athena:
 
             # Start at position 1 in items array
             for extra in item["items"][1:]:
-                try:
-                    extraRarity = extra["rarity"]["value"]
-                    if  extraRarity == "gaminglegends":
-                        extraRarity = "gaming"
-                    extraIcon = extra["images"]["smallIcon"]
-                    extraIcon = ImageUtil.Download(self, extraIcon)
-                    extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
-                    if "bundle" in item and item["bundle"] is None:
+                if "bundle" in item and item["bundle"] is None:
+                    try:
+                        extraRarity = extra["rarity"]["value"]
+                        if  extraRarity == "gaminglegends":
+                            extraRarity = "gaming"
+                        extraIcon = extra["images"]["smallIcon"]
+                        try:
+                            extraIcon = ImageUtil.Download(self, extraIcon)
+                        except Exception as e:
+                            log.warn(f"Extra smallIcon for {name} not found, switching to featured")
+                            extraIcon = extra["images"]["featured"]
+                            extraIcon = ImageUtil.Download(self, extraIcon)
+                        extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
                         try:
                             layer = ImageUtil.Open(self, f"box_bottom_{extraRarity}.png")
                         except FileNotFoundError:
@@ -516,11 +529,11 @@ class Athena:
                             layer,
                         )
 
-                    i += 1
+                        i += 1
 
-                # this is where we are confirming the extra item is broken
-                except Exception as e:
-                    log.error(f"Failed to parse extra item for {name}, {e}")
+                    # this is where we are confirming the extra item is broken
+                    except Exception as e:
+                        log.error(f"Failed to parse extra item for {name}, {e}")
 
         try:
             layer = ImageUtil.Open(self, f"card_faceplate_{rarity}.png")
