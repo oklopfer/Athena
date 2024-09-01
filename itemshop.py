@@ -302,17 +302,18 @@ class Athena:
             else:
                 if "brItems" in item:
                     name = item["brItems"][0]["name"]
+                    category = item["brItems"][0]["type"]["value"]
                 elif "legoKits" in item:
                     name = item["legoKits"][0]["name"]
+                    category = item["legoKits"][0]["type"]["value"]
                 elif "instruments" in item:
                     name = item["instruments"][0]["name"]
+                    category = item["instruments"][0]["type"]["value"]
                 elif "cars" in item:
                     name = item["cars"][0]["name"]
+                    category = item["cars"][0]["type"]["value"]
                 else:
                     name = "Unknown"
-                if type in item:
-                    category = item["type"][0]["value"]
-                else:
                     category = "Unknown"
                 if "brItems" in item:
                     if item["brItems"][0]["images"]["icon"] is None:
@@ -369,12 +370,18 @@ class Athena:
                         else:
                             shop_time = f"{days_difference} days ago"
                             shop_time_flag = "since"
-            if "brItems" in item and item["brItems"] is not None:
+            if "brItems" in item:
                 rarity = item["brItems"][0]["rarity"]["value"]
                 if rarity == "gaminglegends":
                     rarity = "gaming"
+            elif "legoKits" in item:
+                rarity = "lego"
+            elif "instruments" in item:
+                rarity = "festival"
+            elif "cars" in item:
+                rarity = "racing"
             else:
-                rarity = "uncommon"
+                rarity = "common"
             price = item["finalPrice"]
         except Exception as e:
             log.error(f"Failed to parse item {name} ({rarity}/{category}/{price}), {e}")
@@ -387,7 +394,7 @@ class Athena:
             "legendary": (211, 120, 65),
             "dark": (251, 34, 223),
             "starwars": (231, 196, 19),
-            "marvel": (197, 51, 52),
+            "marvel": (196, 54, 55),
             "dc": (84, 117, 199),
             "icon": (54, 183, 183),
             "shadow": (113, 113, 113),
@@ -397,6 +404,9 @@ class Athena:
             "common": (190, 190, 190),
             "gaming": (99, 99, 255),
             "slurp": (85, 150, 190),
+            "lego": (255, 215, 0),
+            "racing": (19, 111, 232),
+            "festival": (145, 131, 245),
         }
 
         blendColor = colors[rarity]
@@ -414,7 +424,6 @@ class Athena:
         card.paste(layer)
 
         try:
-            offerimage = icon.replace('^icon.png', 'offerimage.png')
             offerimage = item["newDisplayAsset"]["materialInstances"][0]["images"]["OfferImage"]
         except Exception as e:
             log.warn(f"No offerimage for {name}")
@@ -453,36 +462,23 @@ class Athena:
                     icon = ImageUtil.RatioResize(self, icon, 285, 365)
                     card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
                 except Exception as e:
-                    if (category == "emote"):
+                    if (offerimage != "https://None"):
                         log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying offerimage.")
-                        icon = offerimage
-                    else:
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying featured.")
-                        if "brItems" in item:
-                            icon = item["brItems"][0]["images"]["smallIcon"]
-                        elif "instruments" in item:
-                            icon = item["instruments"][0]["images"]["small"]
-                        elif "cars" in item:
-                            icon = item["cars"][0]["images"]["cars"]
-                    try:
-                        icon = ImageUtil.Download(self, icon)
-                        icon = ImageUtil.RatioResize(self, icon, 285, 365)
-                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
-                    except Exception as e:
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying without transparency.")
                         try:
-                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                            offericon = ImageUtil.Download(self, offerimage)
+                            offericon = ImageUtil.RatioResize(self, offericon, 285, 365)
+                            card.paste(offericon, ImageUtil.CenterX(self, icon.width, card.width, 15), offericon)
                         except Exception as e:
-                            log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
-                            if "brItems" in item:
-                                icon = item["brItems"][0]["images"]["smallIcon"]
-                            elif "instruments" in item:
-                                icon = item["instruments"][0]["images"]["small"]
-                            elif "cars" in item:
-                                icon = item["cars"][0]["images"]["small"]
-                            icon = ImageUtil.Download(self, icon)
-                            icon = ImageUtil.RatioResize(self, icon, 285, 365)
-                            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                            log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying offerimage with no transparency.")
+                            try:
+                                card.paste(offericon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                            except Exception as e:
+                                log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
+                                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+                    else:
+                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
+                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+
 
         if "brItems" in item:
             lent = item["brItems"]
@@ -498,7 +494,7 @@ class Athena:
 
             # Start at position 1 in items array
             for extra in lent[1:]:
-                if "bundle" in item and item["bundle"] is None:
+                if not "bundle" in item:
                     try:
                         extraRarity = extra["rarity"]["value"]
                         if  extraRarity == "gaminglegends":
@@ -519,34 +515,15 @@ class Athena:
                             )
                             layer = ImageUtil.Open(self, "box_bottom_common.png")
 
-                        # we need to check that the extra-item icon isn't broken...
-                        card.paste(
-                            extraIcon,
-                            (
-                                (card.width - (layer.width + 9)),
-                                (9 + ((i // 1) * (extraIcon.height))),
-                            ),
-                            extraIcon,
+                        # Calculate position
+                        position = (
+                            card.width - (layer.width + 9),
+                            9 + ((i // 1) * extraIcon.height),
                         )
 
-                        # then we can overwrite it
-                        card.paste(
-                            layer,
-                            (
-                                (card.width - (layer.width + 9)),
-                                (9 + ((i // 1) * (layer.height))),
-                            ),
-                        )
-
-                        # and put it back on top, if it isn't broken
-                        card.paste(
-                            extraIcon,
-                            (
-                                (card.width - (layer.width + 9)),
-                                (9 + ((i // 1) * (extraIcon.height))),
-                            ),
-                            extraIcon,
-                        )
+                        card.paste(extraIcon, position, extraIcon)
+                        card.paste(layer, position)
+                        card.paste(extraIcon, position, extraIcon)
 
                         try:
                             layer = ImageUtil.Open(self, f"box_faceplate_{extraRarity}.png")
@@ -567,7 +544,6 @@ class Athena:
 
                         i += 1
 
-                    # this is where we are confirming the extra item is broken
                     except Exception as e:
                         log.error(f"Failed to parse extra item for {name}, {e}")
 
@@ -590,20 +566,31 @@ class Athena:
         canvas = ImageDraw.Draw(card)
 
         if "bundle" in item and item["bundle"] is not None:
-            font = ImageUtil.Font(self, 36)
-            textWidth, _ = font.getsize("Bundle")
+            font = ImageUtil.Font(self, 30)
+            if "legoKits" in item or "cars" in item or "instruments" in item:
+                raritytext = f"{rarity.capitalize()} Bundle"
+            else:
+                raritytext = "Bundle"
+                font = ImageUtil.Font(self, 36)
+            textWidth, _ = font.getsize(raritytext)
             canvas.text(
                 ImageUtil.CenterX(self, textWidth, card.width, 385),
-                "Bundle",
+                raritytext,
                 blendColor,
                 font=font,
             )
         else:
             font = ImageUtil.Font(self, 30)
-            textWidth, _ = font.getsize(f"{rarity.capitalize()} {category.capitalize()}")
+            if (category == "legoprop") in item:
+                cattext = "Prop"
+            else:
+                cattext = f"{category.capitalize()}"
+            raritytext = f"{rarity.capitalize()} {cattext}"
+
+            textWidth, _ = font.getsize(raritytext)
             canvas.text(
                 ImageUtil.CenterX(self, textWidth, card.width, 385),
-                f"{rarity.capitalize()} {category.capitalize()}",
+                raritytext,
                 blendColor,
                 font=font,
             )
