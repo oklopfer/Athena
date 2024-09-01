@@ -581,7 +581,7 @@ class Athena:
             )
         else:
             font = ImageUtil.Font(self, 30)
-            if (category == "legoprop") in item:
+            if (category == "legoprop"):
                 cattext = "Prop"
             else:
                 cattext = f"{category.capitalize()}"
