@@ -150,47 +150,22 @@ class Athena:
         """
 
         try:
-            featured = itemShop["featured"]["entries"] if "featured" in itemShop and itemShop["featured"] is not None and "entries" in itemShop["featured"] else []
-            daily = itemShop["daily"]["entries"] if "daily" in itemShop and itemShop["daily"] is not None and "entries" in itemShop["daily"] else []
-            votes = itemShop["votes"]["entries"] if "votes" in itemShop and itemShop["votes"] is not None and "entries" in itemShop["votes"] else []
-            voteWinners = itemShop["voteWinners"]["entries"] if "voteWinners" in itemShop and itemShop["voteWinners"] is not None and "entries" in itemShop["voteWinners"] else []
-
-            raw_items = []
-            if featured:
-                raw_items.extend(featured)
-            if daily:
-                raw_items.extend(daily)
-            if votes:
-                raw_items.extend(votes)
-            if voteWinners:
-                raw_items.extend(voteWinners)
+            raw_items = itemShop["entries"]
                 
             if not raw_items:
                 log.warning("No items in the item shop")
                 return False
 
         except Exception as e:
-            log.critical(f"Failed to parse Item Shop items, {e}")
+            log.critical(f"Failed to parse Item Shop items, {e}, {raw_items}")
             return False
 
-        all_items = [item for item in raw_items if "sectionId" in item and item["sectionId"] is not None]
-        def safe_section_id(x):
-            try:
-                return x["sectionId"]
-            except (KeyError, TypeError):
-                return 0
+        all_items = [
+            item for item in raw_items 
+            if "layoutId" in item and item["layoutId"] is not None and not item["layoutId"].startswith("JamTracks") and not "tracks" in item
+        ]
 
-        def safe_itemset(x):
-            try:
-                return x["items"][0]["set"]["value"]
-            except:
-                itemid = item["items"][0]["id"]
-                return f"ZZZ{itemid}"
-
-        for item in all_items:
-            item["itemset"] = str(safe_itemset(item))
-
-        all_items.sort(key=lambda x: (safe_section_id(x), x["itemset"]))
+        all_items.sort(key=lambda x: x["layoutId"])
         num_items = len(all_items)
         columns_raw = math.ceil(math.sqrt(len(all_items)))
         if num_items <= 6:
@@ -325,43 +300,81 @@ class Athena:
                 category = "bundle"
                 shop_time_flag = "bundle"
             else:
-                name = item["items"][0]["name"]
-                if "images" in item and item["images"]["icon"] is None:
-                    icon = item["items"][0]["images"]["featured"]
+                if "brItems" in item:
+                    name = item["brItems"][0]["name"]
+                elif "legoKits" in item:
+                    name = item["legoKits"][0]["name"]
+                elif "instruments" in item:
+                    name = item["instruments"][0]["name"]
+                elif "cars" in item:
+                    name = item["cars"][0]["name"]
                 else:
-                    icon = item["items"][0]["images"]["icon"]
-                if icon is None:
-                    icon = item["items"][0]["images"]["smallIcon"]
-                shopHistory = item["items"][0]["shopHistory"]
-                shopHistory_dates = [datetime.fromisoformat(date_string) for date_string in shopHistory]
-                total_appearances = len(shopHistory_dates)
-                if total_appearances < 2:
-                    shop_time = "New!"
-                    shop_time_flag = "new"
+                    name = "Unknown"
+                if type in item:
+                    category = item["type"][0]["value"]
                 else:
-                    days_difference = (shopHistory_dates[-1] - shopHistory_dates[-2]).days
-                    if days_difference == 1:
-                        current_date = shopHistory_dates[-1]
-                        days_consecutive = 1
-                        for i in range(total_appearances - 2, -1, -1):
-                            if (current_date - shopHistory_dates[i]).days == 1:
-                                days_consecutive += 1
-                                current_date = shopHistory_dates[i]
-                            else:
-                                break
-                        if days_consecutive > 1:
-                            shop_time = f"In for {days_consecutive} days"
-                            shop_time_flag = "consecutive"
+                    category = "Unknown"
+                if "brItems" in item:
+                    if item["brItems"][0]["images"]["icon"] is None:
+                        if "featured" in item["brItems"][0]["images"]:
+                            icon = item["brItems"][0]["images"]["featured"]
                         else:
-                            shop_time = "1 day ago"
-                            shop_time_flag = "since"
+                            icon = item["brItems"][0]["images"]["smallIcon"]
                     else:
-                        shop_time = f"{days_difference} days ago"
-                        shop_time_flag = "since"
-                category = item["items"][0]["type"]["value"]
-            rarity = item["items"][0]["rarity"]["value"]
-            if rarity == "gaminglegends":
-                rarity = "gaming"
+                        icon = item["brItems"][0]["images"]["icon"]
+                elif "tracks" in item:
+                    icon = item["tracks"][0]["albumArt"]
+                elif "legoKits" in item:
+                    icon = item["legoKits"][0]["images"]["small"]
+                elif "instruments" in item:
+                    icon = item["instruments"][0]["images"]["large"]
+                elif "cars" in item:
+                    icon = item["cars"][0]["images"]["large"]
+                else:
+                    icon = "https://None"
+                shopHistory = None
+                if "tracks" in item and item["tracks"] is not None:
+                    shopHistory = item["tracks"][0]["shopHistory"]
+                elif "brItems" in item and item["brItems"] is not None:
+                    shopHistory = item["brItems"][0]["shopHistory"]
+                elif "legoKits" in item and item["legoKits"] is not None:
+                    shopHistory = item["legoKits"][0]["shopHistory"]
+                elif "instruments" in item and item["instruments"] is not None:
+                    shopHistory = item["instruments"][0]["shopHistory"]
+                elif "cars" in item and item["cars"] is not None:
+                    shopHistory = item["cars"][0]["shopHistory"]
+                if shopHistory is not None:
+                    shopHistory_dates = [datetime.fromisoformat(date_string) for date_string in shopHistory]
+                    total_appearances = len(shopHistory_dates)
+                    if total_appearances < 2:
+                        shop_time = "New!"
+                        shop_time_flag = "new"
+                    else:
+                        days_difference = (shopHistory_dates[-1] - shopHistory_dates[-2]).days
+                        if days_difference == 1:
+                            current_date = shopHistory_dates[-1]
+                            days_consecutive = 1
+                            for i in range(total_appearances - 2, -1, -1):
+                                if (current_date - shopHistory_dates[i]).days == 1:
+                                    days_consecutive += 1
+                                    current_date = shopHistory_dates[i]
+                                else:
+                                    break
+                            if days_consecutive > 1:
+                                shop_time = f"In for {days_consecutive} days"
+                                shop_time_flag = "consecutive"
+                            else:
+                                shop_time = "1 day ago"
+                                shop_time_flag = "since"
+                        else:
+                            shop_time = f"{days_difference} days ago"
+                            shop_time_flag = "since"
+            if "brItems" in item and item["brItems"] is not None:
+                rarity = item["brItems"][0]["rarity"]["value"]
+                if rarity == "gaminglegends":
+                    rarity = "gaming"
+            else:
+                rarity = "uncommon"
             price = item["finalPrice"]
         except Exception as e:
             log.error(f"Failed to parse item {name} ({rarity}/{category}/{price}), {e}")
@@ -402,15 +415,15 @@ class Athena:
 
         try:
             offerimage = icon.replace('^icon.png', 'offerimage.png')
-            offerimage = offerimage.replace('cosmetics/br/', 'cosmetics/br/materialinstances/mi_')
+            offerimage = item["newDisplayAsset"]["materialInstances"][0]["images"]["OfferImage"]
         except Exception as e:
             log.warn(f"No offerimage for {name}")
             offerimage = "https://None"
         try:
             icon = ImageUtil.Download(self, icon)
         except Exception as e:
-            log.warn((f"Icon for {name} not found, switching to featured"))
-            icon = item["items"][0]["images"]["featured"]
+            log.warn((f"Icon for {name} not found, switching to small"))
+            icon = "https://None"
             icon = ImageUtil.Download(self, icon)
         if (category == "outfit") or (category == "emote"):
             icon = ImageUtil.RatioResize(self, icon, 285, 365)
@@ -429,7 +442,12 @@ class Athena:
                 card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
             except Exception as e:
                 log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying smallIcon.")
-                icon = item["items"][0]["images"]["smallIcon"]
+                if "brItems" in item:
+                    icon = item["brItems"][0]["images"]["smallIcon"]
+                elif "instruments" in item:
+                    icon = item["instruments"][0]["images"]["small"]
+                elif "cars" in item:
+                    icon = item["cars"][0]["images"]["small"]
                 try:
                     icon = ImageUtil.Download(self, icon)
                     icon = ImageUtil.RatioResize(self, icon, 285, 365)
@@ -440,7 +458,12 @@ class Athena:
                         icon = offerimage
                     else:
                         log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying featured.")
-                        icon = item["items"][0]["images"]["featured"]
+                        if "brItems" in item:
+                            icon = item["brItems"][0]["images"]["smallIcon"]
+                        elif "instruments" in item:
+                            icon = item["instruments"][0]["images"]["small"]
+                        elif "cars" in item:
+                            icon = item["cars"][0]["images"]["cars"]
                     try:
                         icon = ImageUtil.Download(self, icon)
                         icon = ImageUtil.RatioResize(self, icon, 285, 365)
@@ -451,17 +474,30 @@ class Athena:
                             card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
                         except Exception as e:
                             log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
-                            icon = item["items"][0]["images"]["smallIcon"]
+                            if "brItems" in item:
+                                icon = item["brItems"][0]["images"]["smallIcon"]
+                            elif "instruments" in item:
+                                icon = item["instruments"][0]["images"]["small"]
+                            elif "cars" in item:
+                                icon = item["cars"][0]["images"]["small"]
                             icon = ImageUtil.Download(self, icon)
                             icon = ImageUtil.RatioResize(self, icon, 285, 365)
                             card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
 
-        if len(item["items"]) > 1:
+        if "brItems" in item:
+            lent = item["brItems"]
+        elif "instruments" in item:
+            lent = item["instruments"]
+        elif "legoKits" in item:
+            lent = item["legoKits"]
+        elif "cars" in item:
+            lent = item["cars"]
+        if len(lent) > 1:
             # Track grid position
             i = 0
 
             # Start at position 1 in items array
-            for extra in item["items"][1:]:
+            for extra in lent[1:]:
                 if "bundle" in item and item["bundle"] is None:
                     try:
                         extraRarity = extra["rarity"]["value"]
