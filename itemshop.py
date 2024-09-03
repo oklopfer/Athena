@@ -39,6 +39,7 @@ class Athena:
                 self,
                 "https://fortnite-api.com/v2/shop",
                 {"language": self.language},
+                {"responseFlags": 5},
             )
 
             if itemShop is not None:
