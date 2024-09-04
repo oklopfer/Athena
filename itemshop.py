@@ -317,13 +317,12 @@ class Athena:
                     name = "Unknown"
                     category = "Unknown"
                 if "brItems" in item:
-                    if item["brItems"][0]["images"]["icon"] is None:
-                        if "featured" in item["brItems"][0]["images"]:
-                            icon = item["brItems"][0]["images"]["featured"]
-                        else:
-                            icon = item["brItems"][0]["images"]["smallIcon"]
-                    else:
+                    if "icon" in item["brItems"][0]["images"]:
                         icon = item["brItems"][0]["images"]["icon"]
+                    elif "featured" in item["brItems"][0]["images"]:
+                        icon = item["brItems"][0]["images"]["featured"]
+                    else:
+                        icon = item["brItems"][0]["images"]["smallIcon"]
                 elif "tracks" in item:
                     icon = item["tracks"][0]["albumArt"]
                 elif "legoKits" in item:
