@@ -7,12 +7,12 @@ from discord.ext import commands
 from math import ceil
 from sys import exit
 from time import sleep
-from datetime import datetime
+from datetime import datetime, timezone
 from multiprocessing import Pool
 from functools import partial
 
 import coloredlogs
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageColor, ImageFilter, ImageChops
 
 from util import ImageUtil, Utility
 
@@ -99,19 +99,15 @@ class Athena:
                 if self.redditon is True:
                     reddit.subreddit(self.sub_reddit).submit_image(title=self.title, image_path=self.image_path, flair_id=self.flair_id)
 
-    def add_yellow_border(card, border_size=10):
-        """Add a yellow border around an image."""
-        draw = ImageDraw.Draw(card)
-        width, height = card.size
-        # Top border
-        draw.rectangle([0, 0, width, border_size], fill='yellow')
-        # Bottom border
-        draw.rectangle([0, height - border_size, width, height], fill='yellow')
-        # Left border
-        draw.rectangle([0, 0, border_size, height], fill='yellow')
-        # Right border
-        draw.rectangle([width - border_size, 0, width, height], fill='yellow')
-        return card
+    def create_yellow_border_layer(card_size, border_size=10, radius=0):
+        width, height = card_size
+        border_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(border_layer)
+        draw.rounded_rectangle([0, 0, width, height], radius, fill='yellow')
+        inner_rect = [border_size, border_size, width - border_size, height - border_size]
+        draw.rounded_rectangle(inner_rect, radius - border_size, fill=(0, 0, 0, 0))
+        
+        return border_layer
 
     def LoadConfiguration(self):
         """
@@ -165,29 +161,105 @@ class Athena:
             item for item in raw_items 
             if "layoutId" in item and item["layoutId"] is not None and not item["layoutId"].startswith("JamTracks") and not "tracks" in item
         ]
-
+        for item in all_items:
+            if item["layout"]["category"] == "Spotlight":
+                item["gridCategory"] = "AAAAASpotlight"
+            elif item["layout"]["category"] == "Build with LEGO® Kits":
+                item["gridCategory"] = "ZZZZZBuild with LEGO® Kits"
+            else:
+                item["gridCategory"] = f"{item["layout"]["category"]}"
+        all_items.sort(key=lambda x: x["sortPriority"])
         all_items.sort(key=lambda x: x["layoutId"])
-        num_items = len(all_items)
-        columns_raw = math.ceil(math.sqrt(len(all_items)))
+        all_items.sort(key=lambda x: x["layout"]["name"])
+        all_items.sort(key=lambda x: (x["gridCategory"]))
+
+        num_items = 0
+        for item in all_items:
+            item["gridSize"] = int(item['tileSize'].split('_')[1])
+            num_items = num_items + item["gridSize"]
+        rows_raw = math.ceil(num_items / 4)
+        columns_raw = math.ceil(math.sqrt(rows_raw)) * 2
         if num_items <= 6:
             columns = columns_raw
         elif num_items <= 8:
             columns = columns_raw + 1
         else:
-            columns = columns_raw + 2
-        rows = math.ceil(num_items / columns)
-        if num_items <= 8:
-            width = 319 * math.ceil(num_items / 2)
-        else:
-            width = 319 * columns
-        if rows <= 3:
-            height = 600 * rows + 400
-        elif rows <= 6:
-            height = 580 * rows + 400
-        else:
-            height = 565 * rows + 400
-        shopImage = Image.new("RGBA", (width, height))
+            columns = columns_raw + 5
+        if (columns % 4) > 0:
+            columns += 4 - (columns % 4)
+        rows = math.ceil(num_items / columns) + 2
+        block_width = 4
+        gap_size = 250
+        rowsabove = 1
+        rowcount = 1
+        metacolumn = 1
+        position = 0
+        metaposition = 0
+        layalt = 0
 
+        previous_layout = None
+        block_x_offset = 0
+        block_y_offset = 0
+        current_position = 0
+        block_y_offset_alt = 0
+        rowsabove_alt = 0
+        previous_offset = 0
+        x_vals = []
+        y_vals = []
+
+        for i in all_items:
+            current_layout = i["layout"]["name"]
+            grid_size = i["gridSize"]
+            metaposition += grid_size
+            card_width = 340 * grid_size
+            card_height = 545
+            rowcount = ceil(metaposition / block_width)
+            if rowcount > rows:
+                metacolumn += 1
+                block_x_offset += (340 * 4) + gap_size
+                metaposition = grid_size
+                rowsabove_alt = 1
+                block_y_offset_alt = card_height + gap_size
+                rowcount = ceil(metaposition / block_width)
+                current_position = 0
+            if current_layout != previous_layout:
+                current_position = 0
+                rowsabove = 1
+                block_y_offset += (card_height * rowsabove) + gap_size + previous_offset
+                if block_y_offset_alt > 0:
+                    block_y_offset = (card_height * rowsabove) + gap_size
+                    block_y_offset_alt = 0
+                position = grid_size
+                previous_layout = current_layout
+                layalt = 1
+            else:
+                position += grid_size
+                rowsabove = ceil(position / block_width)
+                if block_y_offset_alt > 0:
+                    rowsabove = 1
+                    block_y_offset = (card_height * rowsabove) + gap_size
+                    block_y_offset_alt = 0
+                    current_position = 0
+            if (grid_size == 4) and ((current_position + grid_size) % block_width) > 0:
+                adjust = (4 - ((position + grid_size) % block_width))
+                current_position += adjust
+                position += adjust
+                metaposition += adjust
+            if layalt == 1:
+                adjust = (metaposition - grid_size) % 4
+                if adjust > 0:
+                    metaposition += 4 - adjust           
+                layalt = 0
+            x_position = block_x_offset + (current_position % block_width) * (card_width // grid_size + 5) + 230
+            y_position = block_y_offset + ((current_position // block_width) * (card_height + 5))
+            previous_offset = y_position - block_y_offset
+            x_vals.append(x_position + card_width)
+            y_vals.append(y_position + card_height)
+            current_position += grid_size
+
+        width = max(x_vals) + 230
+        height = max(y_vals) + 100
+        shopImage = Image.new("RGBA", (width, height))
         try:
             background = ImageUtil.Open(self, "background.png")
             background = ImageUtil.RatioResize(
@@ -199,18 +271,13 @@ class Athena:
         except FileNotFoundError:
             log.warn("Failed to open background.png, defaulting to dark gray")
             shopImage.paste((18, 18, 18), [0, 0, shopImage.size[0], shopImage.size[1]])
-
         def calculate_sizes(columns):
             ranges = {
                 (1, 3): (15, 28, 28, 275, 400, 100),
                 (4, 5): (14, 26, 26, 200, 350, 100),
-                (6, 7): (12, 24, 24, 150, 350, 200),
-                (8, 10): (9, 21, 21, 125, 350, 200),
-                (11, 12): (9, 18, 18, 125, 350, 200),
+                (6, 13): (12, 21, 21, 125, 400, 200),
                 (13, 16): (7, 15, 15, 125, 350, 200),
-                (17, 18): (6, 13, 13, 125, 350, 200),
-                (19, 21): (4, 11, 11, 125, 350, 200),
-                (22, float('inf')): (3, 10, 10, 125, 350, 200)
+                (17, float('inf')): (7, 15, 15, 125, 425, 200)
             }
 
             for (start, end), values in ranges.items():
@@ -263,16 +330,93 @@ class Athena:
         cards = pool.map(generate_card, all_items)
         cards = [c for c in cards if c is not None]
 
-        for i,card in enumerate(cards):
+        block_width = 4
+        gap_size = 250
+        rowsabove = 1
+        rowcount = 1
+        metacolumn = 1
+        position = 0
+        metaposition = 0
+
+        previous_layout = None
+        block_x_offset = 0
+        block_y_offset = 0
+        current_position = 0
+        block_y_offset_alt = 0
+        rowsabove_alt = 0
+        previous_offset = 0
+        layalt = 0
+
+        for i, card in enumerate(cards):
+            current_layout = all_items[i]["layout"]["name"]
+            grid_size = all_items[i]["gridSize"]
+            metaposition += grid_size
+            rowcount = ceil(metaposition / block_width)
+            if rowcount > rows:
+                metacolumn += 1
+                block_x_offset += (340 * 4) + gap_size
+                metaposition = grid_size
+                rowsabove_alt = 1
+                block_y_offset_alt = card.height + gap_size
+                rowcount = ceil(metaposition / block_width)
+                current_position = 0
+            if current_layout != previous_layout:
+                current_position = 0
+                rowsabove = 1
+                block_y_offset += (card.height * rowsabove) + gap_size + previous_offset
+                if block_y_offset_alt > 0:
+                    block_y_offset = (card.height * rowsabove) + gap_size
+                    block_y_offset_alt = 0
+                sub_font = ImageUtil.TitleFont(self, 90)
+                textWidth, _ = sub_font.getsize(current_layout)
+                textscale = 1
+                if metacolumn > 1:
+                    textscale = 2
+                canvas.text(
+                    ImageUtil.CenterX(self, textWidth, (textscale * block_x_offset) + textWidth + 420, block_y_offset - 130),
+                    current_layout,
+                    (255, 255, 255),
+                    font=sub_font,
+                )
+                position = grid_size
+                previous_layout = current_layout
+                layalt = 1
+            else:
+                position += grid_size
+                rowsabove = ceil(position / block_width)
+                if block_y_offset_alt > 0:
+                    rowsabove = 1
+                    block_y_offset = (card.height * rowsabove) + gap_size
+                    block_y_offset_alt = 0
+                    current_position = 0
+
+            if (grid_size == 4) and ((current_position + grid_size) % block_width) > 0:
+                adjust = (4 - ((position + grid_size) % block_width))
+                current_position += adjust
+                position += adjust
+                metaposition += adjust
+
+            if layalt == 1:
+                adjust = (metaposition - grid_size) % 4
+                if adjust > 0:
+                    metaposition += 4 - adjust           
+                layalt = 0
+
+            x_position = block_x_offset + (current_position % block_width) * (card.width // grid_size + 5) + 230
+            y_position = block_y_offset + ((current_position // block_width) * (card.height + 5))
+            previous_offset = y_position - block_y_offset
+            #print(f"{current_layout} / Row: {rowcount} / Position: {position} (Current: {current_position}; Meta: {metaposition}) / Column: {metacolumn} / Above: {rowsabove}")
             shopImage.paste(
                 card,
                 (
-                    ((columns * 7) + ((i % columns) * (card.width + 5))),
-                    475 + ((i // columns) * (card.height + 5)),
+                    x_position,
+                    y_position,
                 ),
                 card,
             )
-        
+            
+            current_position += grid_size
+
         try:
             shopImage.save("itemshop.png")
             log.info("Generated Item Shop image")
@@ -316,23 +460,14 @@ class Athena:
                 else:
                     name = "Unknown"
                     category = "Unknown"
-                if "brItems" in item:
-                    if "icon" in item["brItems"][0]["images"]:
-                        icon = item["brItems"][0]["images"]["icon"]
-                    elif "featured" in item["brItems"][0]["images"]:
-                        icon = item["brItems"][0]["images"]["featured"]
-                    else:
-                        icon = item["brItems"][0]["images"]["smallIcon"]
-                elif "tracks" in item:
-                    icon = item["tracks"][0]["albumArt"]
-                elif "legoKits" in item:
-                    icon = item["legoKits"][0]["images"]["small"]
-                elif "instruments" in item:
-                    icon = item["instruments"][0]["images"]["large"]
-                elif "cars" in item:
-                    icon = item["cars"][0]["images"]["large"]
-                else:
-                    icon = "https://None"
+                try:
+                    icon = item["newDisplayAsset"]["renderImages"][0]["image"]
+                except Exception as e:
+                    try:
+                        icon = item["newDisplayAsset"]["materialInstances"][0]["images"]["OfferImage"]
+                    except Exception as e:
+                        log.warn(f"No offerimage or renderimage for {name}.")
+                        icon = "https://None"
                 shopHistory = None
                 if "tracks" in item and item["tracks"] is not None:
                     shopHistory = item["tracks"][0]["shopHistory"]
@@ -370,6 +505,10 @@ class Athena:
                         else:
                             shop_time = f"{days_difference} days ago"
                             shop_time_flag = "since"
+            leaves_date = datetime.fromisoformat(item["outDate"].replace('Z', '+00:00'))
+            time_difference = leaves_date - datetime.now(timezone.utc)
+            leaves_text = f"{time_difference.days}d {time_difference.seconds // 3600}h"
+
             if "brItems" in item:
                 rarity = item["brItems"][0]["rarity"]["value"]
                 if rarity == "gaminglegends":
@@ -388,190 +527,182 @@ class Athena:
 
             return
 
-        colors = {
-            "frozen": (148, 223, 255),
-            "lava": (234, 141, 35),
-            "legendary": (211, 120, 65),
-            "dark": (251, 34, 223),
-            "starwars": (231, 196, 19),
-            "marvel": (196, 54, 55),
-            "dc": (84, 117, 199),
-            "icon": (54, 183, 183),
-            "shadow": (113, 113, 113),
-            "epic": (177, 91, 226),
-            "rare": (73, 172, 242),
-            "uncommon": (96, 170, 58),
-            "common": (190, 190, 190),
-            "gaming": (99, 99, 255),
-            "slurp": (85, 150, 190),
-            "lego": (255, 215, 0),
-            "racing": (19, 111, 232),
-            "festival": (145, 131, 245),
-        }
+        if "colors" in item:
+            if "color2" in item["colors"]:
+                gradient = [
+                    f"#{item['colors']['color1'][:6]}",
+                    f"#{item['colors']['color3'][:6]}",
+                    f"#{item['colors']['color2'][:6]}"
+                ]
+                textbgcolor = f"#{item["colors"]["color2"][:6]}"
+            else:
+                gradient = [
+                    f"#{item['colors']['color1'][:6]}",
+                    f"#{item['colors']['color3'][:6]}"
+                ]
+                textbgcolor = f"#{item["colors"]["color3"][:6]}"
+        else:
+            log.warn(f"No colors for {name}")
+            textbgcolor = "#000000"
+            gradient = ["#000000", "#000000", "#000000"]
 
-        blendColor = colors[rarity]
-        if blendColor is None:
-            blendColor = (255, 255, 255)
+        textcolor = "#FFFFFF"
 
-        card = Image.new("RGBA", (300, 545))
+        blendColor = textcolor
+
+        gradient_rgb = [ImageColor.getrgb(color) for color in gradient]
+
+        def interpolate_color(color1, color2, factor):
+            return tuple(
+                int(color1[i] + (color2[i] - color1[i]) * factor)
+                for i in range(3)
+            )
+
+        def create_rounded_rectangle_mask(image_width, image_height, radius):
+            mask = Image.new('L', (image_width, image_height), 0)
+            draw = ImageDraw.Draw(mask)
+            
+            draw.rounded_rectangle([(0, 0), (image_width, image_height)], radius=radius, fill=255)
+            
+            return mask
+
+        def reduce_brightness(color, factor):
+            r, g, b = color
+            r = int(r * factor)
+            g = int(g * factor)
+            b = int(b * factor)
+            return (r, g, b)
+
+        def create_gradient_layer(image_width, image_height, color, fade_percentage, max_opacity, corner_radius, brightness_factor=0.7):
+            color = reduce_brightness(color, brightness_factor)
+            
+            gradient = Image.new('RGBA', (image_width, image_height), color + (0,))
+            
+            alpha_mask = Image.new('L', (image_width, image_height), 0)
+            draw = ImageDraw.Draw(alpha_mask)
+            
+            fade_height = int(image_height * (1 - fade_percentage))
+            
+            for y in range(image_height):
+                if y >= fade_height:
+                    opacity = int(max_opacity * (y - fade_height) / (image_height - fade_height))
+                    opacity = min(max_opacity, max(0, opacity))
+                else:
+                    opacity = 0
+                
+                draw.line([(0, y), (image_width, y)], fill=opacity)
+            
+            rounded_mask = create_rounded_rectangle_mask(image_width, image_height, corner_radius)
+            alpha_mask = Image.composite(alpha_mask, Image.new('L', (image_width, image_height), 0), rounded_mask)
+            
+            gradient.putalpha(alpha_mask)
+
+            return gradient
+
+
+        card = Image.new("RGBA", (340 * item["gridSize"], 545))
+
+        gradient_layer = Image.new("RGBA", card.size)
+        draw = ImageDraw.Draw(gradient_layer)
+
+        height = card.height
+
+        for y in range(height):
+            factor = y / height
+
+            if len(gradient_rgb) == 2:
+                color = interpolate_color(gradient_rgb[0], gradient_rgb[1], factor)
+            else:
+                if factor <= 0.5:
+                    blend_factor = factor * 2
+                    color = interpolate_color(gradient_rgb[0], gradient_rgb[1], blend_factor)
+                else:
+                    adjusted_factor = (factor - 0.5) / 0.7
+                    blend_factor = min(adjusted_factor, 1)
+                    color = interpolate_color(gradient_rgb[1], gradient_rgb[2], blend_factor)
+
+            draw.line([(0, y), (card.width, y)], fill=color)
+
+
+        radius = 40
+        rounded_mask = create_rounded_rectangle_mask(card.width, card.height, radius)
+        card.paste(gradient_layer, (0, 0), mask=rounded_mask)
 
         try:
-            layer = ImageUtil.Open(self, f"card_top_{rarity}.png")
-        except FileNotFoundError:
-            log.warn(f"Failed to open card_top_{rarity}.png, defaulted to Common")
-            layer = ImageUtil.Open(self, "card_top_common.png")
-
-        card.paste(layer)
-
-        try:
-            offerimage = item["newDisplayAsset"]["materialInstances"][0]["images"]["OfferImage"]
+            offerimage = item["newDisplayAsset"]["renderImages"][0]["image"]
         except Exception as e:
-            log.warn(f"No offerimage for {name}")
-            offerimage = "https://None"
+            try:
+                offerimage = item["newDisplayAsset"]["materialInstances"][0]["images"]["OfferImage"]
+            except Exception as e:
+                log.warn(f"No offerimage or renderimage for {name}.")
+                offerimage = "https://None"
         try:
             icon = ImageUtil.Download(self, icon)
         except Exception as e:
             log.warn((f"Icon for {name} not found, switching to small"))
             icon = "https://None"
             icon = ImageUtil.Download(self, icon)
-        if (category == "outfit") or (category == "emote"):
-            icon = ImageUtil.RatioResize(self, icon, 285, 365)
-        elif category == "wrap":
-            icon = ImageUtil.RatioResize(self, icon, 230, 310)
-        elif (category == "bundle"):
-            icon = ImageUtil.RatioResize(self, icon, 285, 350)
+
+        if item["gridSize"] == 1:
+            if category == "outfit" or category == "bundle":
+                if icon.width == 2048:
+                    scale = 1.1
+                else:
+                    scale = 1.8
+            else:
+                scale = 1.2
+        elif category == "bundle" and rarity == "racing":
+            scale = 1.1
+        elif rarity == "festival":
+            scale = 1 / item["gridSize"]
         else:
-            icon = ImageUtil.RatioResize(self, icon, 310, 390)
+            scale = 1.1
+        if (category == "outfit") or (category == "emote"):
+            icon = ImageUtil.RatioResize(self, icon, 285 * item["gridSize"] * scale, 365)
+        elif category == "wrap":
+            icon = ImageUtil.RatioResize(self, icon, 230 * item["gridSize"] * scale, 310)
+        elif (category == "bundle"):
+            icon = ImageUtil.RatioResize(self, icon, 285 * item["gridSize"] * scale, 365)
+        else:
+            icon = ImageUtil.RatioResize(self, icon, 310 * item["gridSize"] * scale, 390)
+        def ensure_transparency(image):
+            if image.mode != "RGBA":
+                image = image.convert("RGBA")
+            return image
+
+        def apply_fallback_transparency(image):
+            if image.mode == "RGBA":
+                return image.split()[3]
+            else:
+                transparent_alpha = Image.new('L', image.size, 0)
+                return transparent_alpha
+
         if icon.mode == "RGBA":
             alpha = icon.split()[3]
-            card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
         else:
-            alpha = None
-            try:
-                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
-            except Exception as e:
-                log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying smallIcon.")
-                if "brItems" in item:
-                    icon = item["brItems"][0]["images"]["smallIcon"]
-                elif "instruments" in item:
-                    icon = item["instruments"][0]["images"]["small"]
-                elif "cars" in item:
-                    icon = item["cars"][0]["images"]["small"]
-                try:
-                    icon = ImageUtil.Download(self, icon)
-                    icon = ImageUtil.RatioResize(self, icon, 285, 365)
-                    card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), icon)
-                except Exception as e:
-                    if (offerimage != "https://None"):
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying offerimage.")
-                        try:
-                            offericon = ImageUtil.Download(self, offerimage)
-                            offericon = ImageUtil.RatioResize(self, offericon, 285, 365)
-                            card.paste(offericon, ImageUtil.CenterX(self, icon.width, card.width, 15), offericon)
-                        except Exception as e:
-                            log.warn(f"{e} for {name} ({rarity}/{category}/{price}), trying offerimage with no transparency.")
-                            try:
-                                card.paste(offericon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
-                            except Exception as e:
-                                log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
-                                card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
-                    else:
-                        log.warn(f"{e} for {name} ({rarity}/{category}/{price}), falling back to smallIcon and no transparency.")
-                        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 15), mask=alpha)
+            icon = ensure_transparency(icon)
+            alpha = apply_fallback_transparency(icon)
 
+        if item["gridSize"] < 3:
+            scale = 20
+        elif category == "bundle" and rarity == "racing":
+            scale = 50
+        else:
+            scale = 30
+        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 35 - (scale * item["gridSize"])), mask=alpha)
 
-        if "brItems" in item:
-            lent = item["brItems"]
-        elif "instruments" in item:
-            lent = item["instruments"]
-        elif "legoKits" in item:
-            lent = item["legoKits"]
-        elif "cars" in item:
-            lent = item["cars"]
-        if len(lent) > 1:
-            # Track grid position
-            i = 0
-
-            # Start at position 1 in items array
-            for extra in lent[1:]:
-                if not "bundle" in item:
-                    try:
-                        extraRarity = extra["rarity"]["value"]
-                        if  extraRarity == "gaminglegends":
-                            extraRarity = "gaming"
-                        extraIcon = extra["images"]["smallIcon"]
-                        try:
-                            extraIcon = ImageUtil.Download(self, extraIcon)
-                        except Exception as e:
-                            log.warn(f"Extra smallIcon for {name} not found, switching to featured")
-                            extraIcon = extra["images"]["featured"]
-                            extraIcon = ImageUtil.Download(self, extraIcon)
-                        extraIcon = ImageUtil.RatioResize(self, extraIcon, 75, 75)
-                        try:
-                            layer = ImageUtil.Open(self, f"box_bottom_{extraRarity}.png")
-                        except FileNotFoundError:
-                            log.warn(
-                                f"Failed to open box_bottom_{extraRarity}.png, defaulted to Common"
-                            )
-                            layer = ImageUtil.Open(self, "box_bottom_common.png")
-
-                        # Calculate position
-                        position = (
-                            card.width - (layer.width + 9),
-                            9 + ((i // 1) * extraIcon.height),
-                        )
-
-                        card.paste(extraIcon, position, extraIcon)
-                        card.paste(layer, position)
-                        card.paste(extraIcon, position, extraIcon)
-
-                        try:
-                            layer = ImageUtil.Open(self, f"box_faceplate_{extraRarity}.png")
-                        except FileNotFoundError:
-                            log.warn(
-                                f"Failed to open box_faceplate_{extraRarity}.png, defaulted to Common"
-                            )
-                            layer = ImageUtil.Open(self, "box_faceplate_common.png")
-
-                        card.paste(
-                            layer,
-                            (
-                                (card.width - (layer.width + 9)),
-                                (9 + ((i // 1) * (layer.height))),
-                            ),
-                            layer,
-                        )
-
-                        i += 1
-
-                    except Exception as e:
-                        log.error(f"Failed to parse extra item for {name}, {e}")
-
-        try:
-            layer = ImageUtil.Open(self, f"card_faceplate_{rarity}.png")
-        except FileNotFoundError:
-            log.warn(f"Failed to open card_faceplate_{rarity}.png, defaulted to Common")
-            layer = ImageUtil.Open(self, "card_faceplate_common.png")
-
-        card.paste(layer, layer)
-
-        try:
-            layer = ImageUtil.Open(self, f"card_bottom_{rarity}.png")
-        except FileNotFoundError:
-            log.warn(f"Failed to open card_bottom_{rarity}.png, defaulted to Common")
-            layer = ImageUtil.Open(self, "card_bottom_common.png")
-
-        card.paste(layer, layer)
+        gradient_layer = create_gradient_layer(card.width, card.height, ImageColor.getrgb(textbgcolor), 0.5, 255, 40)
+        card = Image.alpha_composite(card.convert('RGBA'), gradient_layer)
 
         canvas = ImageDraw.Draw(card)
 
+        if shop_time == "New!":
+            newborder = self.create_yellow_border_layer(card.size, border_size=10, radius=40)
+            card.paste(newborder, (0, 0), newborder)
+
         if "bundle" in item and item["bundle"] is not None:
-            font = ImageUtil.Font(self, 30)
-            if "legoKits" in item or "cars" in item or "instruments" in item:
-                raritytext = f"{rarity.capitalize()} Bundle"
-            else:
-                raritytext = "Bundle"
-                font = ImageUtil.Font(self, 36)
+            raritytext = "Bundle"
+            font = ImageUtil.Font(self, 36)
             textWidth, _ = font.getsize(raritytext)
             canvas.text(
                 ImageUtil.CenterX(self, textWidth, card.width, 385),
@@ -580,17 +711,16 @@ class Athena:
                 font=font,
             )
         else:
-            font = ImageUtil.Font(self, 30)
+            font = ImageUtil.Font(self, 36)
             if (category == "legoprop"):
-                cattext = "Prop"
+                cattext = "Lego Prop"
             else:
                 cattext = f"{category.capitalize()}"
-            raritytext = f"{rarity.capitalize()} {cattext}"
 
-            textWidth, _ = font.getsize(raritytext)
+            textWidth, _ = font.getsize(cattext)
             canvas.text(
                 ImageUtil.CenterX(self, textWidth, card.width, 385),
-                raritytext,
+                cattext,
                 blendColor,
                 font=font,
             )
@@ -598,39 +728,52 @@ class Athena:
         vbucks = ImageUtil.Open(self, "vbucks.png")
         vbucks = ImageUtil.RatioResize(self, vbucks, 25, 25)
 
-        font = ImageUtil.Font(self, 16)
+        font = ImageUtil.Font(self, 24)
+        if item["gridSize"] == 2:
+            refactorsize = (200 + (item["gridSize"] * 70))
+        elif item["gridSize"] > 2:
+            refactorsize = (220 + (item["gridSize"] * 60))
+        else:
+            refactorsize = (240 + (item["gridSize"] * 30))
         if shop_time_flag != "bundle":
-            if total_appearances == 1:
-                textWidth, _ = font.getsize("First")
+            if total_appearances != 1:
+                textWidth, _ = font.getsize(f"{total_appearances} Visits")
                 canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 252), 350),
-                    "First",
-                    blendColor,
-                    font=font,
-                )
-                textWidth, _ = font.getsize("Shop Visit!")
-                canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 235), 366),
-                    "Shop Visit!",
+                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 390),
+                    f"{total_appearances} Visits",
                     blendColor,
                     font=font,
                 )
             else:
-                total_appearances = str(total_appearances)
-                textWidth, _ = font.getsize(total_appearances)
+                textWidth, _ = font.getsize(f"1 Visit")
                 canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 255), 350),
-                    total_appearances,
+                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 390),
+                    f"First Visit!",
                     blendColor,
                     font=font,
                 )
-                textWidth, _ = font.getsize("Shop Visits")
+        else:
+            if "banner" in item:
+                offset = 390
+                if item["gridSize"] < 2:
+                    font = ImageUtil.Font(self, 20)
+                    offset = 392
+                textWidth, _ = font.getsize(item["banner"]["value"])
                 canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), (card.width - 235), 366),
-                    "Shop Visits",
+                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, offset),
+                    item["banner"]["value"],
                     blendColor,
                     font=font,
                 )
+
+        font = ImageUtil.Font(self, 24)
+        textWidth, _ = font.getsize(f"{leaves_text}")
+        canvas.text(
+            ImageUtil.CenterX(self, ((textWidth / 2)), card.width + refactorsize - 80, 390),
+            leaves_text,
+            blendColor,
+            font=font,
+        )
 
         font = ImageUtil.Font(self, 30)
         price = str(f"{price:,}")
@@ -663,15 +806,12 @@ class Athena:
             blendColor,
             font=font,
         )
-        if shop_time == "New!":
-            card = self.add_yellow_border(card)
 
         font = ImageUtil.Font(self, 56)
         textWidth, _ = font.getsize(name)
         change = 0
         if textWidth >= 270:
-            # Ensure that the item name does not overflow
-            font, textWidth, change = ImageUtil.FitTextX(self, name, 56, 260)
+            font, textWidth, change = ImageUtil.FitTextX(self, name, 56, 260 * item["gridSize"])
         canvas.text(
             ImageUtil.CenterX(self, textWidth, card.width, (425 + (change / 2))),
             name,
