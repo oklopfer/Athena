@@ -647,16 +647,20 @@ class Athena:
             if category == "outfit" or category == "bundle":
                 if icon.width == 2048:
                     scale = 1.1
-                else:
+                elif category == "bundle":
                     scale = 1.8
+                else:
+                    scale = 2.4
             else:
-                scale = 1.2
-        elif category == "bundle" and rarity == "racing":
+                scale = 1.3
+        elif category == "outfit":
+            scale = 1.3
+        elif category == "bundle":
             scale = 1.1
         elif rarity == "festival":
-            scale = 1 / item["gridSize"]
+            scale = 0.67
         else:
-            scale = 1.1
+            scale = 1.2
         if (category == "outfit") or (category == "emote"):
             icon = ImageUtil.RatioResize(self, icon, 285 * item["gridSize"] * scale, 365)
         elif category == "wrap":
