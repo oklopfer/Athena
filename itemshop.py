@@ -597,7 +597,6 @@ class Athena:
 
             return gradient
 
-
         card = Image.new("RGBA", (340 * item["gridSize"], 545))
 
         gradient_layer = Image.new("RGBA", card.size)
@@ -671,31 +670,21 @@ class Athena:
             icon = ImageUtil.RatioResize(self, icon, 285 * item["gridSize"] * scale, 365)
         else:
             icon = ImageUtil.RatioResize(self, icon, 310 * item["gridSize"] * scale, 390)
-        def ensure_transparency(image):
-            if image.mode != "RGBA":
-                image = image.convert("RGBA")
-            return image
 
-        def apply_fallback_transparency(image):
-            if image.mode == "RGBA":
-                return image.split()[3]
-            else:
-                transparent_alpha = Image.new('L', image.size, 0)
-                return transparent_alpha
-
-        if icon.mode == "RGBA":
-            alpha = icon.split()[3]
-        else:
-            icon = ensure_transparency(icon)
-            alpha = apply_fallback_transparency(icon)
+        if icon.mode != "RGBA":
+            icon = icon.convert("RGBA")
 
         if item["gridSize"] < 3:
-            scale = 20
+            if item["gridSize"] == 1 and category == "outfit":
+                scale = 40
+            else:
+                scale = 20
         elif category == "bundle" and rarity == "racing":
             scale = 50
         else:
             scale = 30
-        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 35 - (scale * item["gridSize"])), mask=alpha)
+        card.paste(icon, ImageUtil.CenterX(self, icon.width, card.width, 35 - (scale * item["gridSize"])), icon)
+        card.putalpha(rounded_mask)
 
         gradient_layer = create_gradient_layer(card.width, card.height, ImageColor.getrgb(textbgcolor), 0.5, 255, 40)
         card = Image.alpha_composite(card.convert('RGBA'), gradient_layer)
@@ -711,7 +700,7 @@ class Athena:
             font = ImageUtil.Font(self, 36)
             textWidth, _ = font.getsize(raritytext)
             canvas.text(
-                ImageUtil.CenterX(self, textWidth, card.width, 385),
+                ImageUtil.CenterX(self, textWidth, card.width, 375),
                 raritytext,
                 blendColor,
                 font=font,
@@ -720,12 +709,14 @@ class Athena:
             font = ImageUtil.Font(self, 36)
             if (category == "legoprop"):
                 cattext = "Lego Prop"
+            elif (category == "legoset"):
+                cattext = "Lego Set"
             else:
                 cattext = f"{category.capitalize()}"
 
             textWidth, _ = font.getsize(cattext)
             canvas.text(
-                ImageUtil.CenterX(self, textWidth, card.width, 385),
+                ImageUtil.CenterX(self, textWidth, card.width, 375),
                 cattext,
                 blendColor,
                 font=font,
@@ -734,7 +725,7 @@ class Athena:
         vbucks = ImageUtil.Open(self, "vbucks.png")
         vbucks = ImageUtil.RatioResize(self, vbucks, 25, 25)
 
-        font = ImageUtil.Font(self, 24)
+        font = ImageUtil.Font(self, 30)
         if item["gridSize"] == 2:
             refactorsize = (200 + (item["gridSize"] * 70))
         elif item["gridSize"] > 2:
@@ -745,7 +736,7 @@ class Athena:
             if total_appearances != 1:
                 textWidth, _ = font.getsize(f"{total_appearances} Visits")
                 canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 390),
+                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 378),
                     f"{total_appearances} Visits",
                     blendColor,
                     font=font,
@@ -753,39 +744,61 @@ class Athena:
             else:
                 textWidth, _ = font.getsize(f"1 Visit")
                 canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 390),
+                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 378),
                     f"First Visit!",
                     blendColor,
                     font=font,
                 )
         else:
             if "banner" in item:
-                offset = 390
-                if item["gridSize"] < 2:
-                    font = ImageUtil.Font(self, 20)
-                    offset = 392
-                textWidth, _ = font.getsize(item["banner"]["value"])
-                canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, offset),
-                    item["banner"]["value"],
-                    blendColor,
-                    font=font,
-                )
+                if item["gridSize"] == 1:
+                    offset = 381
+                    font = ImageUtil.Font(self, 24)
+                    bonkset = offset - 2
+                else:
+                    offset = 378
+                    font = ImageUtil.Font(self, 30)
+                    bonkset = offset
+                bannertext = item["banner"]["value"]
+                if "V-Bucks Off" in bannertext:
+                    discount = item["regularPrice"] - item["finalPrice"]
+                    discount = str(f"{(discount):,}")
+                    bannertext = f"{discount} Off"
+                    textWidth, _ = font.getsize(bannertext)
+                    canvas.text(
+                        ImageUtil.CenterX(self, ((textWidth / 2) - vbucks.width - 5), card.width - refactorsize, offset),
+                        bannertext,
+                        blendColor,
+                        font=font,
+                    )
+                    card.paste(
+                        vbucks,
+                        ImageUtil.CenterX(self, (vbucks.width + (textWidth / 2) + 5), card.width - refactorsize, bonkset),
+                        vbucks,
+                    )
+                else:
+                    textWidth, _ = font.getsize(bannertext)
+                    canvas.text(
+                        ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, offset),
+                        bannertext,
+                        blendColor,
+                        font=font,
+                    )
 
-        font = ImageUtil.Font(self, 24)
+        font = ImageUtil.Font(self, 30)
         textWidth, _ = font.getsize(f"{leaves_text}")
         canvas.text(
-            ImageUtil.CenterX(self, ((textWidth / 2)), card.width + refactorsize - 80, 390),
+            ImageUtil.CenterX(self, ((textWidth / 2)), card.width + refactorsize - 80, 378),
             leaves_text,
             blendColor,
             font=font,
         )
 
-        font = ImageUtil.Font(self, 30)
+        font = ImageUtil.Font(self, 36)
         price = str(f"{price:,}")
         textWidth, _ = font.getsize(price)
         canvas.text(
-            ImageUtil.CenterX(self, ((textWidth - 5) - vbucks.width), (card.width - 175), 495),
+            ImageUtil.CenterX(self, ((textWidth - 5) - vbucks.width), (card.width - 175), 490),
             price,
             blendColor,
             font=font,
@@ -793,19 +806,19 @@ class Athena:
 
         card.paste(
             vbucks,
-            ImageUtil.CenterX(self, (vbucks.width + (textWidth + 5)), (card.width - 175), 495),
+            ImageUtil.CenterX(self, (vbucks.width + (textWidth + 5)), (card.width - 175), 493),
             vbucks,
         )
 
         textWidth, _ = font.getsize(shop_time)
         if shop_time_flag == "new":
-            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 20)), (card.width + textWidth * 2.5), 495)
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 20)), (card.width + textWidth * 2.5), 490)
         elif shop_time_flag == "bundle":
-            shop_time_paste = ImageUtil.CenterX(self, ((textWidth / 1.5)), (card.width + textWidth * 2), 495)
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth / 1.5)), (card.width + textWidth * 2), 490)
         elif shop_time_flag == "consecutive":
-            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 10)), (card.width + textWidth / 1.5), 495)
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 10)), (card.width + textWidth / 1.5), 490)
         elif shop_time_flag == "since":
-            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 5)), (card.width + textWidth - 25), 495)
+            shop_time_paste = ImageUtil.CenterX(self, ((textWidth - 5)), (card.width + textWidth - 25), 490)
         canvas.text(
             shop_time_paste,
             shop_time,
@@ -819,7 +832,7 @@ class Athena:
         if textWidth >= 270:
             font, textWidth, change = ImageUtil.FitTextX(self, name, 56, 260 * item["gridSize"])
         canvas.text(
-            ImageUtil.CenterX(self, textWidth, card.width, (425 + (change / 2))),
+            ImageUtil.CenterX(self, textWidth, card.width, (423 + (change / 2))),
             name,
             (255, 255, 255),
             font=font,
