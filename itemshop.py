@@ -195,7 +195,6 @@ class Athena:
         metacolumn = 1
         position = 0
         metaposition = 0
-        layalt = 0
 
         previous_layout = None
         block_x_offset = 0
@@ -214,6 +213,11 @@ class Athena:
             card_width = 340 * grid_size
             card_height = 545
             rowcount = ceil(metaposition / block_width)
+            if current_layout != previous_layout:
+                adjust = (metaposition - grid_size) % 4
+                if adjust > 0:
+                    metaposition += 4 - adjust
+                rowcount = ceil(metaposition / block_width)
             if rowcount > rows:
                 metacolumn += 1
                 block_x_offset += (340 * 4) + gap_size
@@ -245,11 +249,7 @@ class Athena:
                 current_position += adjust
                 position += adjust
                 metaposition += adjust
-            if layalt == 1:
-                adjust = (metaposition - grid_size) % 4
-                if adjust > 0:
-                    metaposition += 4 - adjust           
-                layalt = 0
+                rowcount = ceil(metaposition / block_width)
             x_position = block_x_offset + (current_position % block_width) * (card_width // grid_size + 5) + 230
             y_position = block_y_offset + ((current_position // block_width) * (card_height + 5))
             previous_offset = y_position - block_y_offset
@@ -345,13 +345,17 @@ class Athena:
         block_y_offset_alt = 0
         rowsabove_alt = 0
         previous_offset = 0
-        layalt = 0
 
         for i, card in enumerate(cards):
             current_layout = all_items[i]["layout"]["name"]
             grid_size = all_items[i]["gridSize"]
             metaposition += grid_size
             rowcount = ceil(metaposition / block_width)
+            if current_layout != previous_layout:
+                adjust = (metaposition - grid_size) % 4
+                if adjust > 0:
+                    metaposition += 4 - adjust
+                rowcount = ceil(metaposition / block_width)
             if rowcount > rows:
                 metacolumn += 1
                 block_x_offset += (340 * 4) + gap_size
@@ -380,7 +384,6 @@ class Athena:
                 )
                 position = grid_size
                 previous_layout = current_layout
-                layalt = 1
             else:
                 position += grid_size
                 rowsabove = ceil(position / block_width)
@@ -395,12 +398,7 @@ class Athena:
                 current_position += adjust
                 position += adjust
                 metaposition += adjust
-
-            if layalt == 1:
-                adjust = (metaposition - grid_size) % 4
-                if adjust > 0:
-                    metaposition += 4 - adjust           
-                layalt = 0
+                rowcount = ceil(metaposition / block_width)
 
             x_position = block_x_offset + (current_position % block_width) * (card.width // grid_size + 5) + 230
             y_position = block_y_offset + ((current_position // block_width) * (card.height + 5))
@@ -630,7 +628,21 @@ class Athena:
         try:
             icon = ImageUtil.Download(self, icon)
         except Exception as e:
-            icon = item["brItems"][0]["images"]["featured"]
+            if "brItems" in item:
+                if "featured" in item["brItems"][0]["images"]:
+                    icon = item["brItems"][0]["images"]["featured"]
+                elif "icon" in item["brItems"][0]["images"]:
+                    icon = item["brItems"][0]["images"]["icon"]
+                else:
+                    icon = item["brItems"][0]["images"]["smallIcon"]
+            elif "legoKits" in item:
+                icon = item["legoKits"][0]["images"]["small"]
+            elif "instruments" in item:
+                icon = item["instruments"][0]["images"]["large"]
+            elif "cars" in item:
+                icon = item["cars"][0]["images"]["large"]
+            else:
+                icon = "https://None"
             icon = ImageUtil.Download(self, icon)
 
         if item["gridSize"] == 1:
