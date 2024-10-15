@@ -627,20 +627,10 @@ class Athena:
         radius = 40
         rounded_mask = create_rounded_rectangle_mask(card.width, card.height, radius)
         card.paste(gradient_layer, (0, 0), mask=rounded_mask)
-
-        try:
-            offerimage = item["newDisplayAsset"]["renderImages"][0]["image"]
-        except Exception as e:
-            try:
-                offerimage = item["newDisplayAsset"]["materialInstances"][0]["images"]["OfferImage"]
-            except Exception as e:
-                log.warn(f"No offerimage or renderimage for {name}.")
-                offerimage = "https://None"
         try:
             icon = ImageUtil.Download(self, icon)
         except Exception as e:
-            log.warn((f"Icon for {name} not found, switching to small"))
-            icon = "https://None"
+            icon = item["brItems"][0]["images"]["featured"]
             icon = ImageUtil.Download(self, icon)
 
         if item["gridSize"] == 1:
