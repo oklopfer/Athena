@@ -442,6 +442,10 @@ class Athena:
                 shop_time = "Bundle"
                 category = "bundle"
                 shop_time_flag = "bundle"
+                if "banner" in item and item["banner"]["value"] == "New!":
+                    shop_time = "New!"
+                    shop_time_flag = "new"
+                    total_appearances = 1
             else:
                 if "brItems" in item:
                     name = item["brItems"][0]["name"]
@@ -649,7 +653,10 @@ class Athena:
                 if icon.width == 2048:
                     scale = 1.1
                 elif category == "bundle":
-                    scale = 1.8
+                    if rarity == "racing":
+                        scale = 1.4
+                    else:
+                        scale = 1.8
                 else:
                     scale = 2.4
             else:
@@ -657,7 +664,10 @@ class Athena:
         elif category == "outfit":
             scale = 1.3
         elif category == "bundle":
-            scale = 1.1
+            if rarity == "racing":
+                scale = 1.2
+            else:
+                scale = 1.1
         elif rarity == "festival":
             scale = 0.67
         else:
@@ -742,9 +752,15 @@ class Athena:
                     font=font,
                 )
             else:
-                textWidth, _ = font.getsize(f"1 Visit")
+                if item["gridSize"] == 1:
+                    offset = 381
+                    font = ImageUtil.Font(self, 26)
+                else:
+                    offset = 378
+                    font = ImageUtil.Font(self, 30)
+                textWidth, _ = font.getsize(f"1 Visit!")
                 canvas.text(
-                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, 378),
+                    ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, offset),
                     f"First Visit!",
                     blendColor,
                     font=font,
