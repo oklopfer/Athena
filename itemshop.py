@@ -187,6 +187,8 @@ class Athena:
             columns = columns_raw + 5
         if (columns % 4) > 0:
             columns += 4 - (columns % 4)
+        if columns < 4:
+            columns = 4
         rows = math.ceil(num_items / columns) + 2
         block_width = 4
         gap_size = 250
@@ -273,11 +275,15 @@ class Athena:
             shopImage.paste((18, 18, 18), [0, 0, shopImage.size[0], shopImage.size[1]])
         def calculate_sizes(columns):
             ranges = {
-                (1, 3): (15, 28, 28, 275, 400, 100),
-                (4, 5): (14, 26, 26, 200, 350, 100),
-                (6, 13): (12, 21, 21, 125, 400, 200),
-                (13, 16): (7, 15, 15, 125, 350, 200),
-                (17, float('inf')): (7, 15, 15, 125, 425, 200)
+                (1, 4): (16, 26, 26, 380, 540, 150),
+                (5, 8): (14, 24, 24, 160, 440, 200),
+                (9, 12): (12, 21, 21, 70, 410, 200),
+                (13, 16): (10, 17, 17, 70, 430, 200),
+                (17, 23): (7, 13, 13, 70, 430, 200),
+                (24, 27): (6, 11, 11, 80, 430, 200),
+                (28, 31): (5, 9, 9, 90, 430, 200),
+                (32, 35): (4, 8, 8, 120, 460, 200),
+                (36, float('inf')): (4, 8, 8, 100, 460, 200)
             }
 
             for (start, end), values in ranges.items():
@@ -371,13 +377,13 @@ class Athena:
                 if block_y_offset_alt > 0:
                     block_y_offset = (card.height * rowsabove) + gap_size
                     block_y_offset_alt = 0
-                sub_font = ImageUtil.TitleFont(self, 90)
+                sub_font = ImageUtil.TitleFont(self, 80)
                 textWidth, _ = sub_font.getsize(current_layout)
                 textscale = 1
                 if metacolumn > 1:
                     textscale = 2
                 canvas.text(
-                    ImageUtil.CenterX(self, textWidth, (textscale * block_x_offset) + textWidth + 420, block_y_offset - 130),
+                    ImageUtil.CenterX(self, textWidth, (textscale * block_x_offset) + textWidth + 450, block_y_offset - 130),
                     current_layout,
                     (255, 255, 255),
                     font=sub_font,

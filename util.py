@@ -141,7 +141,7 @@ class ImageUtil:
     def TitleFont(
         self,
         size: int,
-        font: str = "BurbankBigBoldCondensed-Black.otf",
+        font: str = "HeadingNowVariableItalic.ttf",
         directory: str = "assets/fonts/",
     ):
         """Return a font object with the specified font file and size."""
@@ -162,7 +162,7 @@ class ImageUtil:
         text: str,
         size: int,
         maxSize: int,
-        font: str = "BurbankBigBoldCondensed-Black.otf",
+        font: str = "HeadingNowVariableItalic.ttf",
     ):
         """Return the font and width which fits the provided text within the specified maxiumum width."""
 
