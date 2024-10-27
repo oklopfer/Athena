@@ -189,7 +189,7 @@ class Athena:
             columns += 4 - (columns % 4)
         if columns < 4:
             columns = 4
-        rows = math.ceil(num_items / columns) + 2
+        rows = math.ceil(num_items / columns) + 1
         block_width = 4
         gap_size = 250
         rowsabove = 1
