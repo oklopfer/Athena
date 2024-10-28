@@ -99,11 +99,11 @@ class Athena:
                 if self.redditon is True:
                     reddit.subreddit(self.sub_reddit).submit_image(title=self.title, image_path=self.image_path, flair_id=self.flair_id)
 
-    def create_yellow_border_layer(card_size, border_size=10, radius=0):
+    def create_border_layer(card_size, border_size=10, radius=0, fillcolor='yellow'):
         width, height = card_size
         border_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(border_layer)
-        draw.rounded_rectangle([0, 0, width, height], radius, fill='yellow')
+        draw.rounded_rectangle([0, 0, width, height], radius, fill=fillcolor)
         inner_rect = [border_size, border_size, width - border_size, height - border_size]
         draw.rounded_rectangle(inner_rect, radius - border_size, fill=(0, 0, 0, 0))
         
@@ -708,8 +708,11 @@ class Athena:
         canvas = ImageDraw.Draw(card)
 
         if shop_time == "New!":
-            newborder = self.create_yellow_border_layer(card.size, border_size=10, radius=40)
+            newborder = self.create_border_layer(card.size, border_size=13, radius=40, fillcolor='yellow')
             card.paste(newborder, (0, 0), newborder)
+        elif "ago" in shop_time and days_difference >= 300:
+            newborder = self.create_border_layer(card.size, border_size=13, radius=40, fillcolor='red')
+            card.paste(newborder, (0, 0), newborder)           
 
         if "bundle" in item and item["bundle"] is not None:
             raritytext = "Bundle"
