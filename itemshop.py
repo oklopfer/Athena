@@ -162,12 +162,15 @@ class Athena:
             if "layoutId" in item and item["layoutId"] is not None and not item["layoutId"].startswith("JamTracks") and not "tracks" in item
         ]
         for item in all_items:
-            if item["layout"]["category"] == "Spotlight":
-                item["gridCategory"] = "AAAAASpotlight"
-            elif item["layout"]["category"] == "Build with LEGO® Kits":
-                item["gridCategory"] = "ZZZZZBuild with LEGO® Kits"
+            if "layout" in item:
+                if item["layout"]["category"] == "Spotlight":
+                    item["gridCategory"] = "AAAAASpotlight"
+                elif item["layout"]["category"] == "Build with LEGO® Kits":
+                    item["gridCategory"] = "ZZZZZBuild with LEGO® Kits"
+                else:
+                    item["gridCategory"] = f"{item["layout"]["category"]}"
             else:
-                item["gridCategory"] = f"{item["layout"]["category"]}"
+                item["gridCategory"] = f"ZZZZZUnknown"
         all_items.sort(key=lambda x: x["sortPriority"])
         all_items.sort(key=lambda x: x["layoutId"])
         all_items.sort(key=lambda x: x["layout"]["name"])
