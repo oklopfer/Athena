@@ -521,7 +521,10 @@ class Athena:
             leaves_text = f"{time_difference.days}d {time_difference.seconds // 3600}h"
 
             if "brItems" in item:
-                rarity = item["brItems"][0]["rarity"]["value"]
+                try:
+                    rarity = item["brItems"][0]["rarity"]["value"]
+                except Exception as e:
+                    rarity = "common"
                 if rarity == "gaminglegends":
                     rarity = "gaming"
             elif "legoKits" in item:
@@ -679,6 +682,8 @@ class Athena:
                 scale = 1.1
         elif rarity == "festival":
             scale = 0.67
+        elif category == "shoe":
+            scale = 0.5
         else:
             scale = 1.2
         if (category == "outfit") or (category == "emote"):
