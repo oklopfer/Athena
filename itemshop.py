@@ -249,7 +249,7 @@ class Athena:
                     block_y_offset = (card_height * rowsabove) + gap_size
                     block_y_offset_alt = 0
                     current_position = 0
-            if (grid_size == 4) and ((current_position + grid_size) % block_width) > 0:
+            if ((grid_size == 4) and ((current_position + grid_size) % block_width) > 0) or ((grid_size >= 2) and ((current_position % 4) >= 3)):
                 adjust = (4 - ((position + grid_size) % block_width))
                 current_position += adjust
                 position += adjust
@@ -402,7 +402,7 @@ class Athena:
                     block_y_offset_alt = 0
                     current_position = 0
 
-            if (grid_size == 4) and ((current_position + grid_size) % block_width) > 0:
+            if ((grid_size == 4) and ((current_position + grid_size) % block_width) > 0) or ((grid_size >= 2) and ((current_position % 4) >= 3)):
                 adjust = (4 - ((position + grid_size) % block_width))
                 current_position += adjust
                 position += adjust
