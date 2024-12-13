@@ -163,12 +163,15 @@ class Athena:
         ]
         for item in all_items:
             if "layout" in item:
-                if item["layout"]["category"] == "Spotlight":
-                    item["gridCategory"] = "AAAAASpotlight"
-                elif item["layout"]["category"] == "Build with LEGO® Kits":
-                    item["gridCategory"] = "ZZZZZBuild with LEGO® Kits"
+                if "category" in item["layout"]:
+                    if item["layout"]["category"] == "Spotlight":
+                        item["gridCategory"] = "AAAAASpotlight"
+                    elif item["layout"]["category"] == "Build with LEGO® Kits":
+                        item["gridCategory"] = "ZZZZZBuild with LEGO® Kits"
+                    else:
+                        item["gridCategory"] = f"{item["layout"]["category"]}"
                 else:
-                    item["gridCategory"] = f"{item["layout"]["category"]}"
+                    item["gridCategory"] = f"ZZZZZUnknown"
             else:
                 item["gridCategory"] = f"ZZZZZUnknown"
         all_items.sort(key=lambda x: x["sortPriority"])
