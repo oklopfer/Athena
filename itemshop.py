@@ -428,7 +428,12 @@ class Athena:
             current_position += grid_size
 
         try:
-            shopImage.save("itemshop.png")
+            shopImage = shopImage.convert("RGB")
+            x, y = shopImage.size
+            if x > 7500:
+                scale = 7500 / x
+                shopImage = shopImage.resize((math.floor(x*scale),math.floor(y*scale)),Image.ANTIALIAS)
+            shopImage.save("itemshop.png", optimize=True)
             log.info("Generated Item Shop image")
 
             return True
