@@ -252,8 +252,8 @@ class Athena:
                     block_y_offset = (card_height * rowsabove) + gap_size
                     block_y_offset_alt = 0
                     current_position = 0
-            if ((grid_size == 4) and ((current_position + grid_size) % block_width) > 0) or ((grid_size >= 2) and ((current_position % 4) >= 3)):
-                adjust = (4 - ((position + grid_size) % block_width))
+            if ((grid_size == 4) and ((current_position + grid_size) % block_width) > 0) or ((grid_size >= 3) and ((current_position % 4) >= 2)) or ((grid_size >= 2) and ((current_position % 4) >= 3)):
+                adjust = (4 - (current_position % block_width))
                 current_position += adjust
                 position += adjust
                 metaposition += adjust
@@ -405,8 +405,8 @@ class Athena:
                     block_y_offset_alt = 0
                     current_position = 0
 
-            if ((grid_size == 4) and ((current_position + grid_size) % block_width) > 0) or ((grid_size >= 2) and ((current_position % 4) >= 3)):
-                adjust = (4 - ((position + grid_size) % block_width))
+            if ((grid_size == 4) and ((current_position + grid_size) % block_width) > 0) or ((grid_size >= 3) and ((current_position % 4) >= 2)) or ((grid_size >= 2) and ((current_position % 4) >= 3)):
+                adjust = (4 - (current_position % block_width))
                 current_position += adjust
                 position += adjust
                 metaposition += adjust
@@ -415,7 +415,7 @@ class Athena:
             x_position = block_x_offset + (current_position % block_width) * (card.width // grid_size + 5) + 230
             y_position = block_y_offset + ((current_position // block_width) * (card.height + 5))
             previous_offset = y_position - block_y_offset
-            #print(f"{current_layout} / Row: {rowcount} / Position: {position} (Current: {current_position}; Meta: {metaposition}) / Column: {metacolumn} / Above: {rowsabove}")
+            #print(f"{current_layout} / Row: {rowcount} / Size: {grid_size} / Position: {position} (Current: {current_position}; Meta: {metaposition}) / Adjust: {adjust}")
             shopImage.paste(
                 card,
                 (
