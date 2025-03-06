@@ -159,7 +159,13 @@ class Athena:
 
         all_items = [
             item for item in raw_items 
-            if "layoutId" in item and "layout" in item and item["layoutId"] is not None and not item["layoutId"].startswith("JamTracks") and not "tracks" in item
+            if (
+                "layoutId" in item
+                and "layout" in item
+                and item["layoutId"] is not None
+                and not item["layoutId"].startswith("JamTracks")
+                and ("bundle" in item or "tracks" not in item)
+            )
         ]
         for item in all_items:
             if "layout" in item:
