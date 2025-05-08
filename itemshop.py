@@ -823,14 +823,14 @@ class Athena:
                         ImageUtil.CenterX(self, (vbucks.width + (textWidth / 2) + 5), card.width - refactorsize, bonkset),
                         vbucks,
                     )
-                else:
-                    textWidth, _ = font.getsize(bannertext)
-                    canvas.text(
-                        ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, offset),
-                        bannertext,
-                        blendColor,
-                        font=font,
-                    )
+                #else:
+                #    textWidth, _ = font.getsize(bannertext)
+                #    canvas.text(
+                #        ImageUtil.CenterX(self, ((textWidth / 2)), card.width - refactorsize, offset),
+                #        bannertext,
+                #        blendColor,
+                #        font=font,
+                #    )
 
         font = ImageUtil.Font(self, 30)
         textWidth, _ = font.getsize(f"{leaves_text}")
