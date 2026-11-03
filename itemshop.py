@@ -558,17 +558,17 @@ class Athena:
         if "colors" in item:
             if "color2" in item["colors"]:
                 gradient = [
-                    f"#{item['colors']['color1'][:6]}",
-                    f"#{item['colors']['color3'][:6]}",
-                    f"#{item['colors']['color2'][:6]}"
+                    f"#{item['colors']['color1'].strip().lstrip("#")[:6]}",
+                    f"#{item['colors']['color3'].strip().lstrip("#")[:6]}",
+                    f"#{item['colors']['color2'].strip().lstrip("#")[:6]}"
                 ]
-                textbgcolor = f"#{item["colors"]["color2"][:6]}"
+                textbgcolor = f"#{item["colors"]["color2"].strip().lstrip("#")[:6]}"
             else:
                 gradient = [
-                    f"#{item['colors']['color1'][:6]}",
-                    f"#{item['colors']['color3'][:6]}"
+                    f"#{item['colors']['color1'].strip().lstrip("#")[:6]}",
+                    f"#{item['colors']['color3'].strip().lstrip("#")[:6]}"
                 ]
-                textbgcolor = f"#{item["colors"]["color3"][:6]}"
+                textbgcolor = f"#{item["colors"]["color3"].strip().lstrip("#")[:6]}"
         else:
             log.warn(f"No colors for {name}")
             textbgcolor = "#000000"
